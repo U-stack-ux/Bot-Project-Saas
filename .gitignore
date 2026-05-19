@@ -1,0 +1,4 @@
+.env
+vault.key
+__pycache__/
+*.exe
