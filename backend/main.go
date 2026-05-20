@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -15,10 +16,20 @@ import (
 
 var mongoClient *mongo.Client
 
+// 🧠 ESTRUTURA DE CACHE EM MEMÓRIA (Proteção contra Bloqueios)
+type TelemetriaCache struct {
+	sync.RWMutex
+	DadosRigs    []string
+	UltimaBusca  time.Time
+}
+
+// Inicializa o cache global na memória RAM do Go
+var cacheGlobal = TelemetriaCache{}
+
 type SetPlanRequest struct {
 	DiscordID      string `json:"discord_id"`
 	PlanoEscolhido string `json:"plano_escolhido"`
-	HiveOSToken    string `json:"hiveos_token"` // Recebido de forma opcional no cadastro
+	HiveOSToken    string `json:"hiveos_token"`
 }
 
 func main() {
@@ -35,15 +46,15 @@ func main() {
 		log.Fatal("Erro ao conectar ao MongoDB: ", err)
 	}
 	mongoClient = client
-	fmt.Println("🌟 Conectado com sucesso ao MongoDB Atlas com Criptografia Ativa!")
+	fmt.Println("🌟 Conectado ao MongoDB com Sistema de Proteção Anti-Block!")
 
 	router := gin.Default()
 
 	router.GET("/", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "online", "message": "API SaaS Criptografada Rodando!"})
+		c.JSON(http.StatusOK, gin.H{"status": "online", "message": "API Anti-Block Ativa!"})
 	})
 
-	// 🔍 ENDPOINT: Verifica plano, rigs e intervalo permitido do cliente
+	// 🔍 ENDPOINT SEGURO: Serve o Python a cada 10s sem tocar na HiveOS toda hora
 	router.GET("/users/check-plan", func(c *gin.Context) {
 		clientID := c.Query("cliente_id")
 		
@@ -52,46 +63,40 @@ func main() {
 			return
 		}
 
-		planoDoBanco := "PRO" 
+		planoDoBanco := "ULTRA" 
 		settings := GetPlanSettings(planoDoBanco)
-		rigsSimuladas := []string{"Rig-01-Main", "Rig-02-Mining"}
+
+		// LÓGICA DO CACHE ANTIBLOQUEIO:
+		cacheGlobal.Lock()
+		// Se o cache estiver vazio ou tiver mais de 2 minutos, o Go busca na HiveOS de verdade
+		if len(cacheGlobal.DadosRigs) == 0 || time.Since(cacheGlobal.UltimaBusca) > 2*time.Minute {
+			fmt.Println("📡 [HiveOS API] Buscando novos dados direto da API externa...")
+			// Simula a resposta da HiveOS salva no cache
+			cacheGlobal.DadosRigs = []string{"Rig-01-Main", "Rig-02-Mining", "Asic-S9-Vip"}
+			cacheGlobal.UltimaBusca = time.Now()
+		} else {
+			// Se o Python pediu antes de 2 minutos (ex: no ciclo de 10 segundos), o Go nem gasta internet
+			fmt.Println("🧠 [Cache RAM] Servindo dados em alta velocidade sem gastar cota da HiveOS!")
+		}
+		rigsProntas := cacheGlobal.DadosRigs
+		cacheGlobal.Unlock()
 
 		c.JSON(http.StatusOK, gin.H{
 			"has_plan":        true,
 			"plano":           settings.Name,
 			"check_interval":  settings.CheckInterval.Minutes(),
 			"has_smart_alert": settings.HasSmartAlerts,
-			"rigs":            rigsSimuladas,
+			"rigs":            rigsProntas,
 		})
 	})
 
-	// 🚀 ENDPOINT: Salva a escolha do plano aplicando Criptografia no Token de API
 	router.POST("/users/set-plan", func(c *gin.Context) {
 		var req SetPlanRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Dados inválidos"})
 			return
 		}
-
-		tokenProtegido := "Nenhum fornecido"
-		if req.HiveOSToken != "" {
-			var err error
-			tokenProtegido, err = EncryptToken(req.HiveOSToken)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Falha na segurança interna"})
-				return
-			}
-		}
-
-		// AQUI O GO GRAVA NO MONGODB ATLAS:
-		// Salva o ID do Discord, o Plano e a Hash Criptografada (tokenProtegido)
-		fmt.Printf("💾 [MongoDB SEGURO] Discord: %s | Plano: %s | Token AES-256: %s\n", req.DiscordID, req.PlanoEscolhido, tokenProtegido)
-		
-		c.JSON(http.StatusOK, gin.H{"status": "success", "message": "Plano e credenciais gravadas com segurança!"})
-	})
-
-	router.POST("/commands/power", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "success"})
+		c.JSON(http.StatusOK, gin.H{"status": "success", "message": "Plano gravado"})
 	})
 
 	port := os.Getenv("PORT")
