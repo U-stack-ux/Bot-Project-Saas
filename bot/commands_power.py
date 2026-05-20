@@ -64,3 +64,15 @@ def setup_power_command(bot_tree: discord.app_commands.CommandTree):
                     await interaction.followup.send("📡 Erro de Conexão com o Backend", ephemeral=True)
                     
             cmd.callback = new_callback
+
+# CONEXÃO COM A TAREFA EM SEGUNDO PLANO DO PAINEL AUTOMÁTICO
+import task_monitor
+
+def setup_monitor_command(bot_tree: discord.app_commands.CommandTree, bot_client):
+    @bot_tree.command(name="monitor_iniciar", description="[ADM/OWN] Fixar e iniciar o Painel Automático neste canal")
+    async def monitor_iniciar(interaction: discord.Interaction):
+        if not is_admin(interaction):
+            return await interaction.response.send_message("❌ Acesso negado.", ephemeral=True)
+            
+        await interaction.response.send_message("⏳ Inicializando painel fixo de monitoramento...", ephemeral=True)
+        task_monitor.iniciar_monitor(bot_client, interaction.channel_id)
