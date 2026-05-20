@@ -2,32 +2,36 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"log"
+	"os"
 	"time"
-	"go.mongodb.org/mongo-driver/bson"
+
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var client *mongo.Client
+// ConectarDB inicializa a conexão com o MongoDB Atlas
+func ConectarDB() *mongo.Client {
+	mongoURI := os.Getenv("MONGO_URI")
+	if mongoURI == "" {
+		log.Fatal("❌ A variável de ambiente MONGO_URI não foi definida no Render")
+	}
 
-func InitDB() {
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	client, _ = mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017"))
-}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
-func LogActivity(discordID, rigName, action, details string) {
-	col := client.Database("upscore").Collection("logs")
-	col.InsertOne(context.TODO(), bson.M{
-		"discord_id": discordID,
-		"rig_name":   rigName,
-		"action":     action,
-		"details":    details,
-		"timestamp":  time.Now(),
-	})
-}
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(mongoURI))
+	if err != nil {
+		log.Fatal("❌ Erro ao conectar ao MongoDB Atlas:", err)
+	}
 
-func DeleteUser(discordID string) error {
-	col := client.Database("upscore").Collection("users")
-	_, err := col.DeleteOne(context.TODO(), bson.M{"discord_id": discordID})
-	return err
+	// Verifica se a conexão está realmente ativa
+	err = client.Ping(ctx, nil)
+	if err != nil {
+		log.Fatal("❌ Não foi possível dar ping no MongoDB Atlas:", err)
+	}
+
+	fmt.Println("🍁 [Database] Conexão com o MongoDB Atlas estabelecida com sucesso!")
+	return client
 }
