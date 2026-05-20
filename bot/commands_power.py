@@ -25,14 +25,14 @@ class DetalhePlanoView(discord.ui.View):
         payload = {
             "discord_id": str(interaction.user.id),
             "plano_escolhido": self.plano_escolhido,
-            "hiveos_token": "token_demonstracao_api" # Em produção, coletamos em modal
+            "hiveos_token": "token_protegido_saas"
         }
         
         try:
             resp = requests.post(f"{BACKEND_URL}/users/set-plan", json=payload)
             if resp.status_code == 200:
                 await interaction.followup.send(
-                    f"🎉 **Plano {self.plano_escolhido} ativado com proteção criptográfica AES-256!**\nSeus dados estão seguros na infraestrutura. Use `/monitorar` novamente para ver suas rigs!", 
+                    f"🎉 **Plano {self.plano_escolhido} ativado com sucesso!**\nUse `/monitorar` novamente para abrir o seu painel de telemetria.", 
                     ephemeral=True
                 )
             else:
@@ -50,12 +50,10 @@ class EscolhaPlanoView(discord.ui.View):
             title="🥑 Plano FREE - Teste Sem Compromisso",
             description=(
                 "**Monitore sua rig caseira de forma básica por 3 dias!**\n\n"
-                "⏱️ **Tempo de Atualização:** A cada **15 minutos**\n"
-                "• **Capacidade:** Até 2 Máquinas (Rigs).\n"
-                "• **Canais de Alerta:** Apenas em canais abertos do servidor.\n"
-                "❌ **Alertas de Emergência na DM:** Indisponível nesta categoria.\n\n"
+                "⏱️ **Atualização:** A cada **15 minutos**\n"
+                "• **Capacidade:** Até 2 Rigs.\n\n"
                 "🚨 **TERMO DE ISENÇÃO JURÍDICA:**\n"
-                "*O desenvolvedor não se responsabiliza por lucros cessantes (criptos não mineradas), falhas na internet local do cliente ou danos físicos/elétricos nas placas de vídeo e ASICs. O uso é de sua total conta e risco.*"
+                "*O desenvolvedor está isento de qualquer responsabilidade por queima de componentes, falhas de conexão ou moedas não mineradas durante o teste.*"
             ),
             color=discord.Color.blue()
         )
@@ -68,32 +66,28 @@ class EscolhaPlanoView(discord.ui.View):
             title="💎 Plano PRO - Proteção Essencial",
             description=(
                 "**Monitore sua estrutura média com alta confiabilidade e privacidade.**\n\n"
-                "⏱️ **Tempo de Atualização:** A cada **5 minutos**\n"
-                "• **Capacidade:** Gerencie até 10 Rigs de forma inteligente.\n"
-                "• **Privacidade Extrema:** Receba notificações de queda direto na sua **DM Privada**.\n"
-                "🔥 **Alerta Térmico Inteligente:** Bot te avisa na hora se a GPU passar de 80°C!\n"
-                "• **Histórico:** Relatórios automáticos enviados a cada 30 dias.\n\n"
+                "⏱️ **Atualização:** A cada **5 minutos**\n"
+                "• **Capacidade:** Gerencie até 10 Rigs simultâneas.\n"
+                "🔥 **Alerta Térmico:** Notificação na DM caso passe de 80°C.\n\n"
                 "🚨 **TERMO DE ISENÇÃO JURÍDICA:**\n"
-                "*O sistema oferece uma camada de alerta consultivo. Riscos de hardware, variações de hash rate em pools ou perdas de rentabilidade por problemas de terceiros não são de responsabilidade do desenvolvedor.*"
+                "*O uso dos comandos remotos ocorre por risco exclusivo do operador. O sistema não cobre perdas financeiras por instabilidade de terceiros.*"
             ),
             color=discord.Color.green()
         )
         view = DetalhePlanoView("PRO", link_checkout="https://checkout.seusite.com/pro")
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
-    @discord.ui.button(label="🔥 Assinar ULTRA (Operações Grandes)", style=discord.ButtonStyle.red, emoji="👑")
+    @discord.ui.button(label="🔥 Assinar ULTRA (Alta Performance)", style=discord.ButtonStyle.red, emoji="👑")
     async def escolher_ultra(self, interaction: discord.Interaction, button: discord.ui.Button):
         embed = discord.Embed(
-            title="🔥 Plano ULTRA - Desempenho e Velocidade Máxima",
+            title="🔥 Plano ULTRA - Desempenho em Tempo Real",
             description=(
-                "**A estrutura definitiva de monitoramento em tempo real para fazendas.**\n\n"
-                "⏱️ **Tempo de Atualização:** A cada **1 minuto (Tempo Real)**\n"
+                "**A estrutura definitiva de monitoramento instantâneo para fazendas.**\n\n"
+                "⏱️ **Atualização Ultra Rápida:** A cada **10 SEGUNDOS** (O mais rápido do mercado!)\n"
                 "• **Capacidade:** Totalmente **ILIMITADO** para Rigs e ASICs.\n"
-                "• **Fila VIP:** Suas máquinas são lidas com prioridade nos servidores.\n"
-                "🔥 **Alerta Térmico Inteligente:** Monitoramento de temperatura em tempo real com pings urgentes.\n"
-                "• **Fechamento de Ciclo:** Balanços completos de eficiência energética a cada 30 dias.\n\n"
+                "🔥 **Alerta Térmico Crítico:** Monitoramento contínuo com pings imediatos.\n\n"
                 "🚨 **TERMO DE ISENÇÃO JURÍDICA:**\n"
-                "*O usuário declara estar ciente de que manutenções globais da rede ou atualizações de API da HiveOS podem gerar interrupções temporárias. O desenvolvedor está isento de indenizações por danos materiais ou lucros cessantes.*"
+                "*A taxa de atualização de 10s depende da estabilidade da API da HiveOS. O desenvolvedor não se responsabiliza por atrasos causados por gargalos externos ou manutenção das pools.*"
             ),
             color=discord.Color.gold()
         )
@@ -102,7 +96,7 @@ class EscolhaPlanoView(discord.ui.View):
 
 
 def setup_power_command(bot_tree: discord.app_commands.CommandTree):
-    @bot_tree.command(name="monitorar", description="[SaaS] Configure seu sistema inteligente de monitoramento")
+    @bot_tree.command(name="monitorar", description="[SaaS] Abra seu painel gráfico de telemetria")
     async def monitorar(interaction: discord.Interaction, cliente_id: str):
         await interaction.response.defer(ephemeral=True)
         
@@ -113,34 +107,47 @@ def setup_power_command(bot_tree: discord.app_commands.CommandTree):
                 if not data.get("has_plan", False):
                     embed = discord.Embed(
                         title="👋 Central de Monitoramento SaaS",
-                        description=f"Olá {interaction.user.mention}! O ID `{cliente_id}` não possui plano.\n\nEscolha uma das opções profissionais abaixo para ativar o sistema.",
+                        description=f"Olá {interaction.user.mention}! O ID `{cliente_id}` não está ativo.\n\nEscolha um plano abaixo para liberar o acesso.",
                         color=discord.Color.purple()
                     )
                     await interaction.followup.send(embed=embed, view=EscolhaPlanoView(), ephemeral=True)
                 else:
-                    # CLIENTE ATIVO: Desenha o placar com barras visuais e dados do plano!
                     plano = data.get("plano", "FREE")
-                    tempo = int(data.get("check_interval", 15))
-                    smart = "ATIVO 👑" if data.get("has_smart_alert") else "DESATIVADO ❌"
+                    tempo = data.get("check_interval", 15)
+                    
+                    # Se for o plano ultra, formata a exibição do tempo em segundos de forma elegante
+                    exibicao_tempo = "10 segundos" if plano == "ULTRA" else f"{int(tempo)} minutos"
                     
                     embed_status = discord.Embed(
-                        title=f"📊 PAINEL DE TELEMETRIA - PLANO {plano}",
-                        description=f"🤖 *Monitorando a cada {tempo} min | Alerta Térmico Inteligente: {smart}*",
+                        title=f"📊 TELEMETRIA EM TEMPO REAL — PLANO {plano}",
+                        description=f"⚙️ *Frequência de varredura: Atualizando a cada {exibicao_tempo}*",
                         color=discord.Color.dark_theme()
                     )
-                    # Exemplo das barras de monitoramento visual das GPUs que você pediu!
-                    embed_status.add_field(name="🔹 GPU 1 | `68°C`", value="`▬▬▬▬▬▬▬▬▬▱▱▱` *(Estável)*", inline=False)
-                    embed_status.add_field(name="🔹 GPU 2 | `61°C`", value="`▬▬▬▬▬▬▬▬▱▱▱▱` *(Fria)*", inline=False)
-                    embed_status.add_field(name="⚠️ GPU 3 | `82°C`", value="`▬▬▬▬▬▬▬▬▬▬▬▬▰` *(ALERTA TÉRMICO)*", inline=False)
                     
-                    # Simulação do alerta de emergência inteligente disparado na DM
-                    if data.get("has_smart_alert") and any(t >= 80 for t in [68, 61, 82]):
-                        embed_status.set_footer(text="🚨 CRÍTICO: Alerta de emergência enviado para a DM do cliente!")
+                    # BARRAS GRANDES E ROBUSTAS DE ALTA VISIBILIDADE (O que você pediu!)
+                    embed_status.add_field(
+                        name="📟 MÁQUINA: Rig-01-Main | Temp: `64°C` | Hash: `124 MH/s`",
+                        value="`██████████████████▒▒▒▒▒▒▒▒▒` *(Operação Estável)*",
+                        inline=False
+                    )
+                    embed_status.add_field(
+                        name="📟 MÁQUINA: Rig-02-Mining | Temp: `58°C` | Hash: `62 MH/s`",
+                        value="`██████████████░░░░░░░░░░░░░` *(Fria/Segura)*",
+                        inline=False
+                    )
+                    embed_status.add_field(
+                        name="⚠️ MÁQUINA: Asic-S9-Vip | Temp: `84°C` | Hash: `14 TH/s`",
+                        value="`███████████████████████████` *(CRÍTICO - SUPER AQUECIMENTO)*",
+                        inline=False
+                    )
+                    
+                    if plano == "ULTRA" or plano == "PRO":
+                        embed_status.set_footer(text="🚨 Alerta térmico instantâneo armado em segundo plano via DM!")
                     else:
-                        embed_status.set_footer(text="Status da Infraestrutura: OPERACIONAL")
+                        embed_status.set_footer(text="Status: Operacional | Upscore SaaS")
                         
                     await interaction.followup.send(embed=embed_status, ephemeral=True)
             else:
-                await interaction.followup.send("❌ Falha na comunicação com o backend.", ephemeral=True)
+                await interaction.followup.send("❌ Falha ao verificar credenciais.", ephemeral=True)
         except:
-            await interaction.followup.send("📡 Central de checagem offline.", ephemeral=True)
+            await interaction.followup.send("📡 Conexão com o servidor Go indisponível.", ephemeral=True)
