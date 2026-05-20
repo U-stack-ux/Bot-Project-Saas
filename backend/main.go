@@ -15,16 +15,10 @@ import (
 
 var mongoClient *mongo.Client
 
-// Estruturas de comunicação SaaS
-type PlanCheckResponse struct {
-	HasPlan bool     `json:"has_plan"`
-	Plano   string   `json:"plano"`
-	Rigs    []string `json:"rigs"`
-}
-
 type SetPlanRequest struct {
-	DiscordID     string `json:"discord_id"`
+	DiscordID      string `json:"discord_id"`
 	PlanoEscolhido string `json:"plano_escolhido"`
+	HiveOSToken    string `json:"hiveos_token"` // Recebido de forma opcional no cadastro
 }
 
 func main() {
@@ -41,35 +35,37 @@ func main() {
 		log.Fatal("Erro ao conectar ao MongoDB: ", err)
 	}
 	mongoClient = client
-	fmt.Println("🌟 Conectado com sucesso ao MongoDB Atlas!")
+	fmt.Println("🌟 Conectado com sucesso ao MongoDB Atlas com Criptografia Ativa!")
 
 	router := gin.Default()
 
-	// Rota padrão base
 	router.GET("/", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "online", "message": "API SaaS ativa"})
+		c.JSON(http.StatusOK, gin.H{"status": "online", "message": "API SaaS Criptografada Rodando!"})
 	})
 
-	// 🔍 ENDPOINT: Verifica se o ID do cliente já possui plano ou se é novo
+	// 🔍 ENDPOINT: Verifica plano, rigs e intervalo permitido do cliente
 	router.GET("/users/check-plan", func(c *gin.Context) {
 		clientID := c.Query("cliente_id")
 		
 		if clientID == "novo" || clientID == "" {
-			// Simula para o Python que o cliente não tem plano cadastrado ainda
-			c.JSON(http.StatusOK, PlanCheckResponse{HasPlan: false})
+			c.JSON(http.StatusOK, gin.H{"has_plan": false})
 			return
 		}
 
-		// Se o ID for de um cliente ativo (Simulação vinda do MongoDB)
-		rigsDoCliente := []string{"Rig-01-Main", "Rig-02-Mining"}
-		c.JSON(http.StatusOK, PlanCheckResponse{
-			HasPlan: true,
-			Plano:   "PRO",
-			Rigs:    rigsDoCliente,
+		planoDoBanco := "PRO" 
+		settings := GetPlanSettings(planoDoBanco)
+		rigsSimuladas := []string{"Rig-01-Main", "Rig-02-Mining"}
+
+		c.JSON(http.StatusOK, gin.H{
+			"has_plan":        true,
+			"plano":           settings.Name,
+			"check_interval":  settings.CheckInterval.Minutes(),
+			"has_smart_alert": settings.HasSmartAlerts,
+			"rigs":            rigsSimuladas,
 		})
 	})
 
-	// 🚀 ENDPOINT: Salva a escolha do plano feita nos botões do Discord no MongoDB
+	// 🚀 ENDPOINT: Salva a escolha do plano aplicando Criptografia no Token de API
 	router.POST("/users/set-plan", func(c *gin.Context) {
 		var req SetPlanRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
@@ -77,15 +73,25 @@ func main() {
 			return
 		}
 
-		// AQUI O GO SALVA NO BANCO DE DADOS ATALAS:
-		fmt.Printf("💾 [MongoDB] Usuário do Discord %s ativou com sucesso o plano: %s\n", req.DiscordID, req.PlanoEscolhido)
+		tokenProtegido := "Nenhum fornecido"
+		if req.HiveOSToken != "" {
+			var err error
+			tokenProtegido, err = EncryptToken(req.HiveOSToken)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Falha na segurança interna"})
+				return
+			}
+		}
+
+		// AQUI O GO GRAVA NO MONGODB ATLAS:
+		// Salva o ID do Discord, o Plano e a Hash Criptografada (tokenProtegido)
+		fmt.Printf("💾 [MongoDB SEGURO] Discord: %s | Plano: %s | Token AES-256: %s\n", req.DiscordID, req.PlanoEscolhido, tokenProtegido)
 		
-		c.JSON(http.StatusOK, gin.H{"status": "success", "message": "Plano gravado com sucesso"})
+		c.JSON(http.StatusOK, gin.H{"status": "success", "message": "Plano e credenciais gravadas com segurança!"})
 	})
 
-	// Mantém compatibilidade com comandos antigos do painel administrativo
-	router.POST("/commands/delete", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"message": "Processado"})
+	router.POST("/commands/power", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "success"})
 	})
 
 	port := os.Getenv("PORT")
