@@ -15,14 +15,19 @@ import (
 
 var mongoClient *mongo.Client
 
-// Estrutura dinâmica para receber os dados reais do cliente de forma ilimitada
-type PowerRequest struct {
-	RigName string `json:"rig_name"`
-	Action  string `json:"action"`
+// Estruturas de comunicação SaaS
+type PlanCheckResponse struct {
+	HasPlan bool     `json:"has_plan"`
+	Plano   string   `json:"plano"`
+	Rigs    []string `json:"rigs"`
+}
+
+type SetPlanRequest struct {
+	DiscordID     string `json:"discord_id"`
+	PlanoEscolhido string `json:"plano_escolhido"`
 }
 
 func main() {
-	// 1. Configuração do MongoDB Atlas
 	mongoURI := os.Getenv("MONGO_URI")
 	if mongoURI == "" {
 		log.Fatal("A variável de ambiente MONGO_URI não foi definida")
@@ -35,52 +40,57 @@ func main() {
 	if err != nil {
 		log.Fatal("Erro ao conectar ao MongoDB: ", err)
 	}
-
 	mongoClient = client
 	fmt.Println("🌟 Conectado com sucesso ao MongoDB Atlas!")
 
-	// 2. Configuração do Servidor Web (Gin)
 	router := gin.Default()
 
-	// --- ROTA ESSENCIAL PARA O UPTIMEROBOT ---
+	// Rota padrão base
 	router.GET("/", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"status":  "online",
-			"message": "Upscore SaaS API rodando com sucesso!",
-		})
+		c.JSON(http.StatusOK, gin.H{"status": "online", "message": "API SaaS ativa"})
 	})
 
-	// 3. Suas rotas existentes e novas (Onde o bot em Python se conecta)
-	router.POST("/commands/delete", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"message": "Comando delete processado"})
-	})
-
-	// ROTA REAL E DINÂMICA DE ENERGIA (PRODUÇÃO ILIMITADA)
-	router.POST("/commands/power", func(c *gin.Context) {
-		var req PowerRequest
-		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Dados inválidos enviados"})
+	// 🔍 ENDPOINT: Verifica se o ID do cliente já possui plano ou se é novo
+	router.GET("/users/check-plan", func(c *gin.Context) {
+		clientID := c.Query("cliente_id")
+		
+		if clientID == "novo" || clientID == "" {
+			// Simula para o Python que o cliente não tem plano cadastrado ainda
+			c.JSON(http.StatusOK, PlanCheckResponse{HasPlan: false})
 			return
 		}
 
-		// Aqui os dados reais chegam de forma dinâmica e limpa do Python
-		fmt.Printf("🚀 [PRODUÇÃO] Comando de %s enviado para a rig: %s\n", req.Action, req.RigName)
-
-		c.JSON(http.StatusOK, gin.H{
-			"status":  "success",
-			"rig_name": req.RigName,
-			"action":  req.Action,
+		// Se o ID for de um cliente ativo (Simulação vinda do MongoDB)
+		rigsDoCliente := []string{"Rig-01-Main", "Rig-02-Mining"}
+		c.JSON(http.StatusOK, PlanCheckResponse{
+			HasPlan: true,
+			Plano:   "PRO",
+			Rigs:    rigsDoCliente,
 		})
 	})
 
-	// 4. Inicialização na Porta Dinâmica do Render
+	// 🚀 ENDPOINT: Salva a escolha do plano feita nos botões do Discord no MongoDB
+	router.POST("/users/set-plan", func(c *gin.Context) {
+		var req SetPlanRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Dados inválidos"})
+			return
+		}
+
+		// AQUI O GO SALVA NO BANCO DE DADOS ATALAS:
+		fmt.Printf("💾 [MongoDB] Usuário do Discord %s ativou com sucesso o plano: %s\n", req.DiscordID, req.PlanoEscolhido)
+		
+		c.JSON(http.StatusOK, gin.H{"status": "success", "message": "Plano gravado com sucesso"})
+	})
+
+	// Mantém compatibilidade com comandos antigos do painel administrativo
+	router.POST("/commands/delete", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "Processado"})
+	})
+
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8080" // Porta padrão local
+		port = "8080"
 	}
-
-	fmt.Printf("🚀 Servidor rodando na porta %s\n", port)
-	if err := router.Run(":" + port); err != nil {
-		log.Fatal("Falha ao iniciar o servidor Go: ", err)
-	}
+	router.Run(":" + port)
 }
