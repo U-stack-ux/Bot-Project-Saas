@@ -1,4 +1,25 @@
-.env
+# --- LOGS DE EXECUÇÃO ---
+backend_logs/
+bot_logs.py
+*.log
+
+# --- CHAVES CRÍTICAS E TOKENS (NUNCA SUBIR) ---
+backend/vault.key
 vault.key
+*.key
+*.pem
+.env
+*.env
+
+# --- BANCOS DE DADOS LOCAIS ---
+backend/hiveos_pro.db
+*.db
+*.sqlite
+
+# --- COMPILADOS E CACHES DO PYTHON/GO ---
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
 __pycache__/
-*.exe
