@@ -1,3 +1,4 @@
+from commands_power import setup_power_command
 import os
 from threading import Thread
 from flask import Flask
@@ -58,6 +59,7 @@ class UpScoreBot(commands.Bot):
         await self.tree.sync()
 
 bot = UpScoreBot()
+setup_power_command(bot.tree)
 
 @bot.tree.command(name="setup", description="Configurar conta e plano")
 async def setup(interaction: discord.Interaction):
