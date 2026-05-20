@@ -1,4 +1,3 @@
-from commands_power import setup_power_command
 import os
 from threading import Thread
 from flask import Flask
@@ -7,6 +6,7 @@ from discord import app_commands
 from discord.ext import commands
 import requests
 from dotenv import load_dotenv
+from commands_power import setup_power_command
 
 # --- TRUQUE DO FLASK PARA LIBERAR A PORTA NO RENDER ---
 app = Flask('')
@@ -19,7 +19,6 @@ def run_flask():
     port = int(os.environ.get("PORT", 8080))
     app.run(host='0.0.0.0', port=port)
 
-# Inicia o Flask em paralelo para o Render não cortar o bot
 Thread(target=run_flask).start()
 # ------------------------------------------------------
 
@@ -27,10 +26,15 @@ load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 BACKEND_URL = os.getenv('BACKEND_URL')
 
-# Seu ID de Administrador
-YOUR_ID = 82782882
+# Configuração do Administrador (ID ou Username)
+YOUR_ID = "82782882"
 
-# DICIONÁRIO DE TRADUÇÃO AUTOMÁTICA
+def is_admin(interaction: discord.Interaction) -> bool:
+    """Valida se quem executou o comando é o dono do bot"""
+    user_id_str = str(interaction.user.id)
+    user_name = interaction.user.name or ""
+    return user_id_str == YOUR_ID or YOUR_ID in user_name
+
 STRINGS = {
     "pt-br": {
         "welcome": "💎 UpScore ULTRA Ativado!",
@@ -38,7 +42,7 @@ STRINGS = {
         "recovery": "🩺 Autocura: Religamento automático ativo.",
         "log_cmd": "🧾 Use `/logs` para auditar minhas ações.",
         "not_found": "🚫 Nenhum log registrado.",
-        "del_ok": "✅ Usuário (user) removido com sucesso!",
+        "del_ok": "✅ Usuário {user} removido com sucesso!",
         "access_denied": "❌ Acesso negado."
     },
     "en-us": {
@@ -47,7 +51,7 @@ STRINGS = {
         "recovery": "🩺 Auto-healing: Automatic restart active.",
         "log_cmd": "🧾 Use `/logs` to audit my actions.",
         "not_found": "🚫 No logs recorded.",
-        "del_ok": "✅ User (user) successfully removed!",
+        "del_ok": "✅ User {user} successfully removed!",
         "access_denied": "❌ Access denied."
     }
 }
@@ -59,6 +63,8 @@ class UpScoreBot(commands.Bot):
         await self.tree.sync()
 
 bot = UpScoreBot()
+
+# Injeta o comando /power isolado que está no outro arquivo
 setup_power_command(bot.tree)
 
 @bot.tree.command(name="setup", description="Configurar conta e plano")
@@ -96,7 +102,8 @@ async def adm_delete(interaction: discord.Interaction, usuario: discord.User):
     lang = str(interaction.locale).lower()
     text = STRINGS.get(lang, STRINGS["en-us"])
     
-    if interaction.user.id != YOUR_ID:
+    # Nova validação corrigida na fonte!
+    if not is_admin(interaction):
         return await interaction.response.send_message(text["access_denied"], ephemeral=True)
         
     try:
