@@ -7,10 +7,10 @@ import (
 type PlanTier struct {
 	Name            string        `json:"name"`
 	MaxRigs         int           `json:"max_rigs"`
-	CheckInterval   time.Duration `json:"check_interval"`   // Tempo de loop de cada plano
-	AlertInterval   time.Duration `json:"alert_interval"`   // Lembrete de 30 dias
+	CheckInterval   time.Duration `json:"check_interval"`   
+	AlertInterval   time.Duration `json:"alert_interval"`   
 	NotifyEndOfPlan bool          `json:"notify_end_of_plan"`
-	HasSmartAlerts  bool          `json:"has_smart_alerts"` // Avisos imediatos na DM por temperatura
+	HasSmartAlerts  bool          `json:"has_smart_alerts"` 
 }
 
 func GetPlanSettings(tier string) PlanTier {
@@ -19,29 +19,37 @@ func GetPlanSettings(tier string) PlanTier {
 		return PlanTier{
 			Name:            "ULTRA",
 			MaxRigs:         9999,
-			CheckInterval:   1 * time.Minute,       // 🔥 ATUALIZA A CADA 1 MINUTO
-			AlertInterval:   30 * 24 * time.Hour,   // Relatório a cada 30 dias
+			CheckInterval:   10 * time.Second,      
+			AlertInterval:   30 * 24 * time.Hour,   
 			NotifyEndOfPlan: true,
-			HasSmartAlerts:  true,                  // Termômetro Inteligente Ativo
+			HasSmartAlerts:  true,                  
 		}
 	case "PRO":
 		return PlanTier{
 			Name:            "PRO",
 			MaxRigs:         10,
-			CheckInterval:   5 * time.Minute,       // 💎 ATUALIZA A CADA 5 MINUTOS
-			AlertInterval:   30 * 24 * time.Hour,   // Relatório a cada 30 dias
+			CheckInterval:   5 * time.Minute,       
+			AlertInterval:   30 * 24 * time.Hour,   
 			NotifyEndOfPlan: true,
-			HasSmartAlerts:  true,                  // Termômetro Inteligente Ativo
+			HasSmartAlerts:  true,                  
 		}
 	case "FREE":
+		return PlanTier{
+			Name:            "FREE (TESTE 3 DIAS)",
+			MaxRigs:         2,
+			CheckInterval:   15 * time.Minute,      
+			AlertInterval:   0,                     
+			NotifyEndOfPlan: true,                  
+			HasSmartAlerts:  false,                 
+		}
 	default:
 		return PlanTier{
 			Name:            "FREE (TESTE 3 DIAS)",
 			MaxRigs:         2,
-			CheckInterval:   15 * time.Minute,      // 🥑 ATUALIZA A CADA 15 MINUTOS
-			AlertInterval:   0,                     // Sem avisos mensais
-			NotifyEndOfPlan: true,                  // Apenas aviso de fim de plano!
-			HasSmartAlerts:  false,                 // Sem alertas térmicos imediatos
+			CheckInterval:   15 * time.Minute,      
+			AlertInterval:   0,                     
+			NotifyEndOfPlan: true,                  
+			HasSmartAlerts:  false,                 
 		}
 	}
 }
