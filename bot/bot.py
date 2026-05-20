@@ -27,7 +27,7 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 BACKEND_URL = os.getenv('BACKEND_URL')
 
 # Configuração do Administrador (ID ou Username)
-YOUR_ID = 'SEU_ID_AQUI'
+YOUR_ID = '82782882'
 
 def is_admin(interaction: discord.Interaction) -> bool:
     user_id_str = str(interaction.user.id)
@@ -63,6 +63,8 @@ class UpScoreBot(commands.Bot):
         # CARREGAMENTO DAS EXTENSÕES MODULARES
         await self.load_extension("welcome")
         await self.load_extension("ia_commands")
+        await self.load extension("anti_spam")
+        await self.load_extension("registration")
         await self.tree.sync()
 
 bot = UpScoreBot()
