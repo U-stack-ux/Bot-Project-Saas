@@ -108,11 +108,6 @@ func encryptToken(plainText string) string {
 	return hex.EncodeToString(cipherText)
 }
 
-// --- REGRAS DE NEGÓCIO DOS PLANOS ---
-
-	}
-}
-
 // --- INTEGRAÇÃO COM AS APIS DE MINERAÇÃO ---
 
 func fetchHiveOsData(token string) []RigData {
