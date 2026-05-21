@@ -6,4 +6,5 @@ load_dotenv()
 
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 BACKEND_URL = "http://localhost:3000/api"
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 UPDATE_INTERVAL = 5

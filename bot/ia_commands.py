@@ -12,7 +12,7 @@ class IACommands(commands.Cog):
         
         # 💡 Aqui o Python conversa com o seu servidor Go que está rodando no Render
         # Substitua 'SEU_URL_DO_RENDER' pelo link real do seu backend em Go
-        backend_url = "https://seu-backend-go.onrender.com/ia/analisar" 
+        backend_url = "https://bot-project-saas.onrender.com" 
         
         try:
             # Envia o ID do Discord para o Go identificar quem é o cliente
