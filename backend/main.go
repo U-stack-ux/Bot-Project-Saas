@@ -47,8 +47,8 @@ type UserActiveStatus struct {
 
 var (
 	usersCollection *mongo.Collection
-	mongoClient     *mongo.Client
-	cacheGlobal     = struct {
+	mongoclient     *mongo.Client
+        cacheGlobal     = struct {
 		sync.RWMutex
 		DadosPorCliente map[string][]RigData
 		UltimaBusca     time.Time
@@ -186,6 +186,8 @@ func main() {
 	}
 	mongoClient = client
 	usersCollection = client.Database("UpscoreSaaS").Collection("users")
+        IniciarServidorWeb(mongoClient)
+
 
 	router := gin.Default()
 

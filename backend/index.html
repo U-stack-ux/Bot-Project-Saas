@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro e Segurança - Bot-Project</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #f5f5f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background-color: #262626;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            max-width: 500px;
+            width: 100%;
+        }
+        h2 {
+            color: #ff9f1c;
+            text-align: center;
+            margin-top: 0;
+        }
+        p.subtitle {
+            text-align: center;
+            color: #aaa;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #ddd;
+        }
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background-color: #333;
+            color: #fff;
+            box-sizing: border-box;
+        }
+        input:focus {
+            border-color: #ff9f1c;
+            outline: none;
+        }
+        .terms-box {
+            background-color: #1e1e1e;
+            border: 1px solid #444;
+            padding: 15px;
+            height: 150px;
+            overflow-y: scroll;
+            font-size: 13px;
+            color: #bbb;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 14px;
+            color: #ccc;
+            margin-bottom: 25px;
+        }
+        .checkbox-group input {
+            margin-top: 3px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #ff9f1c;
+            border: none;
+            border-radius: 4px;
+            color: #1a1a1a;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background-color: #e08b14;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Termos & Ativação do Bot</h2>
+    <p class="subtitle">Preencha os dados abaixo para ativar o monitoramento das suas Rigs com total segurança jurídica.</p>
+    
+    <form action="/enviar-dados" method="POST">
+        <div class="form-group">
+            <label for="nome">Nome Completo:</label>
+            <input type="text" id="nome" name="nome" placeholder="Seu nome completo" required>
+        </div>
+
+        <div class="form-group">
+            <label for="usuario">Nome de Usuário do Discord:</label>
+            <input type="text" id="usuario" name="usuario" placeholder="Ex: minerador_pro" required>
+        </div>
+
+        <div class="form-group">
+            <label for="idade">Sua Idade:</label>
+            <input type="number" id="idade" name="idade" min="1" max="120" placeholder="Ex: 25" required>
+        </div>
+
+        <label>Termos de Serviço e Isenção de Responsabilidade:</label>
+        <div class="terms-box">
+            <strong>1. Natureza do Serviço:</strong> O bot é uma ferramenta de monitoramento auxiliar. Nós buscamos os dados das suas Rigs através das APIs fornecidas por você (NiceHash/RaveOS) e exibimos no Discord.<br><br>
+            <strong>2. Isenção de Responsabilidade por Hardware:</strong> A mineração de criptomoedas é uma atividade de alto risco térmico e financeiro. O Bot-Project NÃO se responsabiliza por qualquer dano físico em seu hardware (como queima de placas de vídeo, fontes ou componentes) decorrente de superaquecimento ou falhas na operação.<br><br>
+            <strong>3. Lucros Cessantes:</strong> Nós NÃO nos responsabilizamos por perdas financeiras ou dinheiro que você deixou de ganhar caso o bot fique fora do ar, atrase o envio de um alerta ou sofra instabilidade nos servidores do Render ou Discord. O monitoramento final e a segurança do hardware continuam sendo de responsabilidade total do operador da Rig.<br><br>
+            <strong>4. Segurança de Chaves de API:</strong> O usuário compromete-se a fornecer chaves de API com permissões restritas APENAS PARA LEITURA. Não nos responsabilizamos por mau uso de chaves configuradas incorretamente pelo usuário.
+        </div>
+
+        <div class="checkbox-group">
+            <input type="checkbox" id="concordo" name="concordo" required>
+            <label for="concordo">Eu li, entendi e concordo com os Termos de Serviço e declaro que as informações acima são verdadeiras.</label>
+        </div>
+
+        <button type="submit">⚡ Confirmar e Ir para o Discord</button>
+    </form>
+</div>
+
+</body>
+</html>
