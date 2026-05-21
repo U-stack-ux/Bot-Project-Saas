@@ -13,8 +13,10 @@ type RigData struct {
 // User representa a estrutura real do cliente salva no MongoDB Atlas
 type User struct {
 	DiscordID     string    `bson:"discord_id" json:"discord_id"`
-	ClienteID     string    `bson:"cliente_id" json:"cliente_id"`
-	Plano         string    `bson:"plano" json:"plano"`
+	ClientID      string    `bson:"cliente_id" json:"cliente_id"`
+	ApiToken      string    `bson:"api_token" json:"api_token"`
+        DisclaimerAccepted bool `bson:"disclaimer_accepted" json:"disclaimer_accepted"`
+        Plano         string    `bson:"plano" json:"plano"`
 	HiveOSToken   string    `bson:"hiveos_token" json:"hiveos_token"`
 	Plataforma    string    `bson:"plataforma" json:"plataforma"`
 	DataCriacao   time.Time `bson:"data_criacao" json:"data_criacao"`
