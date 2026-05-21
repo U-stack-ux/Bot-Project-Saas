@@ -24,13 +24,6 @@ import (
 
 // --- ESTRUTURAS DE DADOS ---
 
-type RigData struct {
-	Nome       string `json:"nome"`
-	Status     string `json:"status"`
-	Temp       int    `json:"temperatura"`
-	HashRate   string `json:"hashrate"`
-}
-
 type User struct {
 	DiscordID          string    `bson:"discord_id" json:"discord_id"`
 	ClientID           string    `bson:"cliente_id" json:"cliente_id"`
