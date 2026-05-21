@@ -110,14 +110,6 @@ func encryptToken(plainText string) string {
 
 // --- REGRAS DE NEGÓCIO DOS PLANOS ---
 
-func GetPlanSettings(plano string) PlanSettings {
-	switch strings.ToUpper(plano) {
-	case "ULTRA":
-		return PlanSettings{CheckInterval: 10, HasSmartAlerts: true}
-	case "PRO":
-		return PlanSettings{CheckInterval: 30, HasSmartAlerts: false}
-	default:
-		return PlanSettings{CheckInterval: 60, HasSmartAlerts: false}
 	}
 }
 
@@ -130,7 +122,7 @@ func fetchHiveOsData(token string) []RigData {
 
 	resp, err := client.Do(req)
 	if err != nil || resp.StatusCode != 200 {
-		return []RigData{{Nome: "Erro HiveOS", Status: "Offline/Verificar API", Temp: 0, HashRate: "0 MH/s"}}
+		return []RigData{{Nome: "Erro HiveOS", Status: "Offline/Verificar API", Temperatura: 0, HashRate: "0 MH/s"}}
 	}
 	defer resp.Body.Close()
 
@@ -154,13 +146,13 @@ func fetchHiveOsData(token string) []RigData {
 		rigs = append(rigs, RigData{
 			Nome:     farm.Name,
 			Status:   status,
-			Temp:     68, // Temperatura média simulada vinda do parser estrutural se ausente
+			Temperatura:     68, // Temperatura média simulada vinda do parser estrutural se ausente
 			HashRate: fmt.Sprintf("%d/%d Online", farm.Stats.RigsOnline, farm.Stats.WorkersTotal),
 		})
 	}
 
 	if len(rigs) == 0 {
-		return []RigData{{Nome: "Farm Principal", Status: "Sem Rigs Ativas", Temp: 0, HashRate: "0 MH/s"}}
+		return []RigData{{Nome: "Farm Principal", Status: "Sem Rigs Ativas", Temperatura: 0, HashRate: "0 MH/s"}}
 	}
 	return rigs
 }
@@ -172,7 +164,7 @@ func fetchNiceHashData(apiKey string) []RigData {
 
 	resp, err := client.Do(req)
 	if err != nil || resp.StatusCode != 200 {
-		return []RigData{{Nome: "Erro NiceHash", Status: "Offline/Verificar API", Temp: 0, HashRate: "0 MH/s"}}
+		return []RigData{{Nome: "Erro NiceHash", Status: "Offline/Verificar API", Temperatura: 0, HashRate: "0 MH/s"}}
 	}
 	defer resp.Body.Close()
 
@@ -189,13 +181,13 @@ func fetchNiceHashData(apiKey string) []RigData {
 		rigs = append(rigs, RigData{
 			Nome:     r.Name,
 			Status:   r.MinerStatus,
-			Temp:     65,
+			Temperatura:     65,
 			HashRate: "Ativo",
 		})
 	}
 
 	if len(rigs) == 0 {
-		return []RigData{{Nome: "Nicehash Worker", Status: "Nenhuma Rig Encontrada", Temp: 0, HashRate: "0 MH/s"}}
+		return []RigData{{Nome: "Nicehash Worker", Status: "Nenhuma Rig Encontrada", Temperatura: 0, HashRate: "0 MH/s"}}
 	}
 	return rigs
 }
