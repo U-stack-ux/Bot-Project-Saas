@@ -127,23 +127,27 @@ class RegistrationModal(discord.ui.Modal):
         Except Exception as e:
             Print(f"Erro ao disparar painel automático: {e}")
 
-# ---------------------------------------------------------------------------
+# ==========================================
 # VIEW 2: TELA DO ACORDO LEGAL
-# ---------------------------------------------------------------------------
+# ==========================================
 class LegalDisclaimerView(discord.ui.View):
     def __init__(self, lang, plano_escolhido):
         super().__init__(timeout=None)
         self.lang = lang
-        self.plano = plano_escolhido
-        self.texts = UI_STRINGS[lang]
+        self.plano_escolhido = plano_escolhido
+        self.textis = UI_STRINGS[lang]
         
-        Btn = discord.ui.Button(label=self.texts['btn_accept'], style=discord.ButtonStyle.danger, custom_id="accept_law_btn")
-        Btn.callback = self.accept_callback
+        # URL oficial do seu site hospedado no Render
+        # Altere o texto abaixo pelo link real do seu app no Render
+        url_site = "https://bot-project-saas.onrender.com"
+        
+        # Criando o botão do tipo LINK que abre o navegador automaticamente
+        btn = discord.ui.Button(
+            label=self.textis['btn_accept'], 
+            style=discord.ButtonStyle.link, 
+            url=url_site
+        )
         self.add_item(btn)
-
-    Async def accept_callback(self, interaction: discord.Interaction):
-        # Abre a janela pop-up para preencher os dados de mineração direto no clique
-        Await interaction.response.send_modal(RegistrationModal(self.lang, self.plano))
 
 # ---------------------------------------------------------------------------
 # VIEW 1: TELA DE ENTRADA (ESCOLHA DE PLANOS)
@@ -194,3 +198,4 @@ class Welcome(commands.Cog):
 
 async def setup(bot):
     Await bot.add_cog(Welcome(bot))
+
