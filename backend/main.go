@@ -24,17 +24,6 @@ import (
 
 // --- ESTRUTURAS DE DADOS ---
 
-type User struct {
-	DiscordID          string    `bson:"discord_id" json:"discord_id"`
-	ClientID           string    `bson:"cliente_id" json:"cliente_id"`
-	Plano              string    `bson:"plano" json:"plano"`
-	ApiToken           string    `bson:"api_token" json:"api_token"`
-	Plataforma         string    `bson:"plataforma" json:"plataforma"`
-	DataCriacao        time.Time `bson:"datacriacao" json:"datacriacao"`
-	DataExpiracao      time.Time `bson:"dataexpiracao" json:"dataexpiracao"`
-	DisclaimerAccepted bool      `bson:"disclaimer_accepted" json:"disclaimer_accepted"`
-}
-
 type PlanSettings struct {
 	CheckInterval int  `json:"check_interval"`
 	HasSmartAlerts bool `json:"has_smart_alerts"`
@@ -358,8 +347,8 @@ func main() {
 				// Alimenta opcionalmente dados dinâmicos de teste simulando picos de calor > 75°C
 				// para validação física do sensor sem precisar de hardware ligado
 				for i := range currentRigs {
-					if currentRigs[i].Temp == 68 { 
-						currentRigs[i].Temp = 78 // Força ultrapassagem do gatilho para o Alerta disparar na DM
+					if currentRigs[i].Temperatura == 68 { 
+						currentRigs[i].Temperatura = 78 // Força ultrapassagem do gatilho para o Alerta disparar na DM
 					}
 				}
 
