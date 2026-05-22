@@ -63,7 +63,7 @@ class UpScoreBot(commands.Bot):
         # CARREGAMENTO DAS EXTENSÕES MODULARES
         await self.load_extension("welcome")
         await self.load_extension("ia_commands")
-        await self.load extension("anti_spam")
+        await self.load_extension("anti_spam")
         await self.load_extension("registration")
         await self.tree.sync()
 
