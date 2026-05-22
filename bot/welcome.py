@@ -54,7 +54,8 @@ class LegalDisclaimerView(discord.ui.View):
         self.textis = UI_STRINGS[lang]
         
         # LINK DO SEU BACKEND EM GO DO RENDER COLOQUE AQUI
-        url_site = "https://bot-project-saas.onrender.com/index.htmlm"
+        url_site = "https://u-stack-ux.github.io/Site-bot-saas/"
+
         
         btn = discord.ui.Button(
             label=self.textis['btn_accept'], 
