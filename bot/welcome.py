@@ -52,17 +52,14 @@ class LegalDisclaimerView(discord.ui.View):
         self.lang = lang
         self.plano_escolhido = plano_escolhido
         self.textis = UI_STRINGS[lang]
-        
-        # LINK DO SEU BACKEND EM GO DO RENDER COLOQUE AQUI
-        url_site = "https://u-stack-ux.github.io/Site-bot-saas/"
 
-        
-        btn = discord.ui.Button(
-            label=self.textis['btn_accept'], 
-            style=discord.ButtonStyle.link, 
-            url=url_site
-        )
-        self.add_item(btn)
+    # Criamos o botão normal (Cor Verde, sem o parâmetro URL)
+    @discord.ui.button(label="✅ Aceitar Termos e Continuar", style=discord.ButtonStyle.green)
+    async def btn_accept_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # Puxa o Modal de registro que já existe no fim do seu arquivo!
+        modal = RegistrationModal(self.lang, self.plano_escolhido)
+        # Abre o pop-up nativo na tela do usuário
+        await interaction.response.send_modal(modal)
 
 # ==========================================
 # VIEW 1: TELA DE ENTRADA (ESCOLHA DE PLANOS)
