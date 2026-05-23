@@ -64,26 +64,45 @@ class LegalDisclaimerView(discord.ui.View):
 # ==========================================
 # VIEW 1: TELA DE ENTRADA (ESCOLHA DE PLANOS)
 # ==========================================
+# ========================================================
+# VIEW 1: TELA DE ENTRADA (ESCOLHA DE PLANOS)
+# ========================================================
 class MainView(discord.ui.View):
-    def __init__(self, locale):
+    def __init__(self, lang, locale):
         super().__init__(timeout=None)
-        self.lang = locale if locale in UI_STRINGS else 'en-us'
+        self.lang = lang
+        if locale in UI_STRINGS:
+            self.lang = locale
         self.textis = UI_STRINGS[self.lang]
-        
-        btn_free = discord.ui.Button(label=self.textis['btn_free'], style=discord.ButtonStyle.green, custom_id="flow_free")
+
+        # 1. Botão Teste Grátis (Verde)
+        btn_free = discord.ui.Button(label=self.textis['btn_free'], style=discord.ButtonStyle.green)
         btn_free.callback = self.choose_free
         self.add_item(btn_free)
-        
-        btn_paid = discord.ui.Button(label=self.textis['btn_paid'], style=discord.ButtonStyle.blurple, custom_id="flow_paid")
-        btn_paid.callback = self.choose_paid
-        self.add_item(btn_paid)
+
+        # 2. Botão Plano PRO (Azul/Blurple)
+        btn_pro = discord.ui.Button(label="💎 Plano PRO", style=discord.ButtonStyle.blurple)
+        btn_pro.callback = self.choose_pro
+        self.add_item(btn_pro)
+
+        # 3. Botão Plano ULTRA (Cinza/Cinza Escuro)
+        btn_ultra = discord.ui.Button(label="👑 Plano ULTRA", style=discord.ButtonStyle.secondary)
+        btn_ultra.callback = self.choose_ultra
+        self.add_item(btn_ultra)
 
     async def choose_free(self, interaction: discord.Interaction):
         embed = discord.Embed(title="Termos de Uso - Teste Grátis", description=UI_STRINGS[self.lang]['legal'], color=0x00ff00)
+        # Passa "FREE" para o contrato legal
         await interaction.response.send_message(embed=embed, view=LegalDisclaimerView(self.lang, "FREE"), ephemeral=True)
 
-    async def choose_paid(self, interaction: discord.Interaction):
-        embed = discord.Embed(title="Termos de Uso - Assinatura VIP", description=UI_STRINGS[self.lang]['legal'], color=0xff00ff)
+    async def choose_pro(self, interaction: discord.Interaction):
+        embed = discord.Embed(title="Termos de Uso - Assinatura PRO", description=UI_STRINGS[self.lang]['legal'], color=0x00aaff)
+        # Passa "PRO" para o contrato legal
+        await interaction.response.send_message(embed=embed, view=LegalDisclaimerView(self.lang, "PRO"), ephemeral=True)
+
+    async def choose_ultra(self, interaction: discord.Interaction):
+        embed = discord.Embed(title="Termos de Uso - Assinatura ULTRA", description=UI_STRINGS[self.lang]['legal'], color=0xff00ff)
+        # Passa "ULTRA" para o contrato legal
         await interaction.response.send_message(embed=embed, view=LegalDisclaimerView(self.lang, "ULTRA"), ephemeral=True)
 
 # ==========================================================
