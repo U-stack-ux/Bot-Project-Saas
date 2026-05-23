@@ -1,71 +1,54 @@
+import os
 import discord
 from discord.ext import commands
+import asyncio
+import subprocess
+import time
 from flask import Flask
 from threading import Thread
-import os
-from dotenv import load_dotenv
-import requests
 
-load_dotenv()
-TOKEN = os.getenv('DISCORD_TOKEN')
-BACKEND_URL = os.getenv('BACKEND_URL')
+# Importações dos seus arquivos
+import bot.config as config
+import bot.alertas as alertas
 
-# Configuração do Flask para manter o Render feliz
+# 1. Flask para o UptimeRobot (Mantém o serviço ativo)
 app = Flask('')
-
 @app.route('/')
 def home():
-    return "Bot Online", 200
-
-@app.route('/health')
-def health():
-    return "OK", 200
+    return "Bot e Backend Integrados: Online!", 200
 
 def run_flask():
-    app.run(host='0.0.0.0', port=8080)
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host='0.0.0.0', port=port)
 
-def keep_alive():
-    t = Thread(target=run_flask)
-    t.start()
+# 2. Inicializador do Backend Go
+def iniciar_backend_go():
+    # Caminho do executável compilado (ajustado para a estrutura de pastas)
+    caminho_bin = "./backend/server_bin"
+    try:
+        print("🚀 Iniciando Backend em Go (Processo Filho)...")
+        # Inicia o binário do Go sem travar o Python
+        subprocess.Popen([caminho_bin], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception as e:
+        print(f"❌ Erro crítico ao iniciar o backend em Go: {e}")
 
-# Configuração do Bot com todos os privilégios ativos
-class UpScoreBot(commands.Bot):
-    def __init__(self):
-        super().__init__(command_prefix='!', intents=discord.Intents.all())
+# 3. Configuração do Bot
+intents = discord.Intents.default()
+intents.message_content = True
+bot = commands.Bot(command_prefix="!", intents=intents)
 
-    async def setup_hook(self):
-        # CARREGAMENTO DAS EXTENSÕES MODULARES
-        await self.load_extension("welcome")
-        await self.load_extension("ia_commands")
-        await self.load_extension("anti_spam")
-        await self.load_extension("registration")
-        await self.tree.sync()
-
-bot = UpScoreBot()
-
-# Injeta o comando power isolado
-# setup_power_command(bot.tree)
-
-@bot.tree.command(name="setup", description="Configurar conta e plano")
-async def setup(interaction: discord.Interaction):
-    # Aqui chamamos o fluxo de boas-vindas do welcome.py
-    from welcome import MainView, UI_STRINGS
-    lang = str(interaction.locale).lower()
-    lang = lang if lang in UI_STRINGS else 'en-us'
-    embed = discord.Embed(
-        title=UI_STRINGS[lang]['welcome'],
-        description=UI_STRINGS[lang]['desc'],
-        color=0x00ffff
-    )
-    await interaction.response.send_message(embed=embed, view=MainView(interaction.locale), ephemeral=True)
-
-@bot.tree.command(name="logs", description="Ver histórico de proteção")
-async def logs(interaction: discord.Interaction):
-    await interaction.response.defer(ephemeral=True)
-    lang = str(interaction.locale).lower()
-    # Lógica de logs com o backend...
-    await interaction.followup.send("Painel de logs em desenvolvimento ou integração.", ephemeral=True)
+@bot.event
+async def on_ready():
+    print(f"✅ Bot conectado: {bot.user}")
+    # Inicia a tarefa de monitoramento
+    bot.loop.create_task(alertas.monitor_temperaturas(bot))
 
 if __name__ == "__main__":
-    keep_alive()
-    bot.run(TOKEN)
+    # Inicia o Flask
+    Thread(target=run_flask, daemon=True).start()
+    
+    # Inicia o Go
+    iniciar_backend_go()
+    
+    # Inicia o Bot
+    bot.run(config.TOKEN)
