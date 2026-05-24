@@ -1,0 +1,2523 @@
+=== ESTRUTURA DO PROJETO ===
+.
+├── backend
+│   ├── crypto.go
+│   ├── database.go
+│   ├── database_admin.go
+│   ├── go.mod
+│   ├── go.sum
+│   ├── hiveos.go
+│   ├── hiveos_api.go
+│   ├── index.html
+│   ├── main.go
+│   ├── models.go
+│   ├── nicehash.go
+│   ├── plans.go
+│   ├── raveos.go
+│   ├── security.go
+│   └── server.go
+├── bot
+│   ├── alertas.py
+│   ├── anti_spam.py
+│   ├── backup.py
+│   ├── bot.py
+│   ├── bot_admin.py
+│   ├── bot_logs.py
+│   ├── bot_monitor.py
+│   ├── commands_power.py
+│   ├── config.py
+│   ├── ia_commands.py
+│   ├── interface.py
+│   ├── registration.py
+│   ├── requirements.txt
+│   ├── rig_selector.py
+│   ├── task_monitor.py
+│   ├── temperatura_control.py
+│   └── welcome.py
+├── interface.py
+├── projeto_completo.txt
+└── start.sh
+
+3 directories, 35 files
+
+=== CONTEÚDO DOS ARQUIVOS ===
+
+--- ARQUIVO: ./interface.py ---
+import discord
+import aiohttp
+from config import BACKEND_URL
+
+class RegistroModal(discord.ui.Modal, title="Vincular HiveOS"):
+    farm_id = discord.ui.TextInput(label="Farm ID", placeholder="ID da sua Farm", required=True)
+    token = discord.ui.TextInput(label="Token HiveOS", placeholder="Seu Personal Access Token", style=discord.TextStyle.long, required=True)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        payload = {
+            "discord_id": str(interaction.user.id),
+            "token": self.token.value,
+            "farm_id": self.farm_id.value
+        }
+        async with aiohttp.ClientSession() as session:
+            async with session.post(f"{BACKEND_URL}/registrar", json=payload) as resp:
+                if resp.status == 200:
+                    await interaction.followup.send("✅ Conta vinculada com sucesso!", ephemeral=True)
+                else:
+                    await interaction.followup.send("❌ Erro ao salvar dados no Backend.", ephemeral=True)
+
+class BotaoRegistro(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="Configurar HiveOS", style=discord.ButtonStyle.green, emoji="🔑")
+    async def vincular(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_modal(RegistroModal())
+
+--- ARQUIVO: ./start.sh ---
+#!/bin/bash
+echo "🚀 Iniciando o Ecossistema HiveOS Monitor..."
+termux-wake-lock
+echo "✅ Wake Lock Ativado"
+
+echo "🐹 Iniciando Backend em Go..."
+cd ~/bot_monitoramento_project/bot_banked
+go run . > backend.log 2>&1 &
+sleep 3
+
+echo "🐍 Iniciando Bot em Python..."
+cd ~/bot_monitoramento_project/bot_discord
+python bot.py
+
+--- ARQUIVO: ./backend/index.html ---
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro e Segurança - Bot-Project</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #f5f5f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background-color: #262626;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            max-width: 500px;
+            width: 100%;
+        }
+        h2 {
+            color: #ff9f1c;
+            text-align: center;
+            margin-top: 0;
+        }
+        p.subtitle {
+            text-align: center;
+            color: #aaa;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #ddd;
+        }
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background-color: #333;
+            color: #fff;
+            box-sizing: border-box;
+        }
+        input:focus {
+            border-color: #ff9f1c;
+            outline: none;
+        }
+        .terms-box {
+            background-color: #1e1e1e;
+            border: 1px solid #444;
+            padding: 15px;
+            height: 150px;
+            overflow-y: scroll;
+            font-size: 13px;
+            color: #bbb;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 14px;
+            color: #ccc;
+            margin-bottom: 25px;
+        }
+        .checkbox-group input {
+            margin-top: 3px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #ff9f1c;
+            border: none;
+            border-radius: 4px;
+            color: #1a1a1a;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background-color: #e08b14;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Termos & Ativação do Bot</h2>
+    <p class="subtitle">Preencha os dados abaixo para ativar o monitoramento das suas Rigs com total segurança jurídica.</p>
+    
+    <form action="https://bot-project-saas.onrender.com/enviar-dados" method="POST">
+        <div class="form-group">
+            <label for="nome">Nome Completo:</label>
+            <input type="text" id="nome" name="nome" placeholder="Seu nome completo" required>
+        </div>
+
+        <div class="form-group">
+            <label for="usuario">Nome de Usuário do Discord:</label>
+            <input type="text" id="usuario" name="usuario" placeholder="Ex: minerador_pro" required>
+        </div>
+
+        <div class="form-group">
+            <label for="idade">Sua Idade:</label>
+            <input type="number" id="idade" name="idade" min="1" max="120" placeholder="Ex: 25" required>
+        </div>
+
+        <label>Termos de Serviço e Isenção de Responsabilidade:</label>
+        <div class="terms-box">
+            <strong>1. Natureza do Serviço:</strong> O bot é uma ferramenta de monitoramento auxiliar. Nós buscamos os dados das suas Rigs através das APIs fornecidas por você (NiceHash/RaveOS) e exibimos no Discord.<br><br>
+            <strong>2. Isenção de Responsabilidade por Hardware:</strong> A mineração de criptomoedas é uma atividade de alto risco térmico e financeiro. O Bot-Project NÃO se responsabiliza por qualquer dano físico em seu hardware (como queima de placas de vídeo, fontes ou componentes) decorrente de superaquecimento ou falhas na operação.<br><br>
+            <strong>3. Lucros Cessantes:</strong> Nós NÃO nos responsabilizamos por perdas financeiras ou dinheiro que você deixou de ganhar caso o bot fique fora do ar, atrase o envio de um alerta ou sofra instabilidade nos servidores do Render ou Discord. O monitoramento final e a segurança do hardware continuam sendo de responsabilidade total do operador da Rig.<br><br>
+            <strong>4. Segurança de Chaves de API:</strong> O usuário compromete-se a fornecer chaves de API com permissões restritas APENAS PARA LEITURA. Não nos responsabilizamos por mau uso de chaves configuradas incorretamente pelo usuário.
+        </div>
+
+        <div class="checkbox-group">
+            <input type="checkbox" id="concordo" name="concordo" required>
+            <label for="concordo">Eu li, entendi e concordo com os Termos de Serviço e declaro que as informações acima são verdadeiras.</label>
+        </div>
+
+        <button type="submit">⚡ Confirmar e Ir para o Discord</button>
+    </form>
+</div>
+
+</body>
+</html>
+
+--- ARQUIVO: ./backend/go.sum ---
+github.com/bytedance/gopkg v0.1.3 h1:TPBSwH8RsouGCBcMBktLt1AymVo2TVsBVCY4b6TnZ/M=
+github.com/bytedance/gopkg v0.1.3/go.mod h1:576VvJ+eJgyCzdjS+c4+77QF3p7ubbtiKARP3TxducM=
+github.com/bytedance/sonic v1.15.0 h1:/PXeWFaR5ElNcVE84U0dOHjiMHQOwNIx3K4ymzh/uSE=
+github.com/bytedance/sonic v1.15.0/go.mod h1:tFkWrPz0/CUCLEF4ri4UkHekCIcdnkqXw9VduqpJh0k=
+github.com/bytedance/sonic/loader v0.5.0 h1:gXH3KVnatgY7loH5/TkeVyXPfESoqSBSBEiDd5VjlgE=
+github.com/bytedance/sonic/loader v0.5.0/go.mod h1:AR4NYCk5DdzZizZ5djGqQ92eEhCCcdf5x77udYiSJRo=
+github.com/cloudwego/base64x v0.1.6 h1:t11wG9AECkCDk5fMSoxmufanudBtJ+/HemLstXDLI2M=
+github.com/cloudwego/base64x v0.1.6/go.mod h1:OFcloc187FXDaYHvrNIjxSe8ncn0OOM8gEHfghB2IPU=
+github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
+github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/gabriel-vasile/mimetype v1.4.12 h1:e9hWvmLYvtp846tLHam2o++qitpguFiYCKbn0w9jyqw=
+github.com/gabriel-vasile/mimetype v1.4.12/go.mod h1:d+9Oxyo1wTzWdyVUPMmXFvp4F9tea18J8ufA774AB3s=
+github.com/gin-contrib/sse v1.1.0 h1:n0w2GMuUpWDVp7qSpvze6fAu9iRxJY4Hmj6AmBOU05w=
+github.com/gin-contrib/sse v1.1.0/go.mod h1:hxRZ5gVpWMT7Z0B0gSNYqqsSCNIJMjzvm6fqCz9vjwM=
+github.com/gin-gonic/gin v1.12.0 h1:b3YAbrZtnf8N//yjKeU2+MQsh2mY5htkZidOM7O0wG8=
+github.com/gin-gonic/gin v1.12.0/go.mod h1:VxccKfsSllpKshkBWgVgRniFFAzFb9csfngsqANjnLc=
+github.com/go-playground/assert/v2 v2.2.0 h1:JvknZsQTYeFEAhQwI4qEt9cyV5ONwRHC+lYKSsYSR8s=
+github.com/go-playground/assert/v2 v2.2.0/go.mod h1:VDjEfimB/XKnb+ZQfWdccd7VUvScMdVu0Titje2rxJ4=
+github.com/go-playground/locales v0.14.1 h1:EWaQ/wswjilfKLTECiXz7Rh+3BjFhfDFKv/oXslEjJA=
+github.com/go-playground/locales v0.14.1/go.mod h1:hxrqLVvrK65+Rwrd5Fc6F2O76J/NuW9t0sjnWqG1slY=
+github.com/go-playground/universal-translator v0.18.1 h1:Bcnm0ZwsGyWbCzImXv+pAJnYK9S473LQFuzCbDbfSFY=
+github.com/go-playground/universal-translator v0.18.1/go.mod h1:xekY+UJKNuX9WP91TpwSH2VMlDf28Uj24BCp08ZFTUY=
+github.com/go-playground/validator/v10 v10.30.1 h1:f3zDSN/zOma+w6+1Wswgd9fLkdwy06ntQJp0BBvFG0w=
+github.com/go-playground/validator/v10 v10.30.1/go.mod h1:oSuBIQzuJxL//3MelwSLD5hc2Tu889bF0Idm9Dg26cM=
+github.com/goccy/go-json v0.10.5 h1:Fq85nIqj+gXn/S5ahsiTlK3TmC85qgirsdTP/+DeaC4=
+github.com/goccy/go-json v0.10.5/go.mod h1:oq7eo15ShAhp70Anwd5lgX2pLfOS3QCiwU/PULtXL6M=
+github.com/goccy/go-yaml v1.19.2 h1:PmFC1S6h8ljIz6gMRBopkjP1TVT7xuwrButHID66PoM=
+github.com/goccy/go-yaml v1.19.2/go.mod h1:XBurs7gK8ATbW4ZPGKgcbrY1Br56PdM69F7LkFRi1kA=
+github.com/golang/snappy v0.0.4 h1:yAGX7huGHXlcLOEtBnF4w7FQwA26wojNCwOYAEhLjQM=
+github.com/golang/snappy v0.0.4/go.mod h1:/XxbfmMg8lxefKM7IXC3fBNl/7bRcc72aCRzEWrmP2Q=
+github.com/google/go-cmp v0.7.0 h1:wk8382ETsv4JYUZwIsn6YpYiWiBsYLSJiTsyBybVuN8=
+github.com/google/go-cmp v0.7.0/go.mod h1:pXiqmnSA92OHEEa9HXL2W4E7lf9JzCmGVUdgjX3N/iU=
+github.com/google/gofuzz v1.0.0/go.mod h1:dBl0BpW6vV/+mYPU4Po3pmUjxk6FQPldtuIdl/M65Eg=
+github.com/json-iterator/go v1.1.12 h1:PV8peI4a0ysnczrg+LtxykD8LfKY9ML6u2jnxaEnrnM=
+github.com/json-iterator/go v1.1.12/go.mod h1:e30LSqwooZae/UwlEbR2852Gd8hjQvJoHmT4TnhNGBo=
+github.com/klauspost/compress v1.17.9 h1:6KIumPrER1LHsvBVuDa0r5xaG0Es51mhhB9BQB2qeMA=
+github.com/klauspost/compress v1.17.9/go.mod h1:Di0epgTjJY877eYKx5yC51cX2A2Vl2ibi7bDH9ttBbw=
+github.com/klauspost/cpuid/v2 v2.3.0 h1:S4CRMLnYUhGeDFDqkGriYKdfoFlDnMtqTiI/sFzhA9Y=
+github.com/klauspost/cpuid/v2 v2.3.0/go.mod h1:hqwkgyIinND0mEev00jJYCxPNVRVXFQeu1XKlok6oO0=
+github.com/leodido/go-urn v1.4.0 h1:WT9HwE9SGECu3lg4d/dIA+jxlljEa1/ffXKmRjqdmIQ=
+github.com/leodido/go-urn v1.4.0/go.mod h1:bvxc+MVxLKB4z00jd1z+Dvzr47oO32F/QSNjSBOlFxI=
+github.com/mattn/go-isatty v0.0.20 h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWEY=
+github.com/mattn/go-isatty v0.0.20/go.mod h1:W+V8PltTTMOvKvAeJH7IuucS94S2C6jfK/D7dTCTo3Y=
+github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=
+github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd h1:TRLaZ9cD/w8PVh93nsPXa1VrQ6jlwL5oN8l14QlcNfg=
+github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=
+github.com/modern-go/reflect2 v1.0.2 h1:xBagoLtFs94CBntxluKeaWgTMpvLxC4ur3nMaC9Gz0M=
+github.com/modern-go/reflect2 v1.0.2/go.mod h1:yWuevngMOJpCy52FWWMvUC8ws7m/LJsjYzDa0/r8luk=
+github.com/montanaflynn/stats v0.7.1 h1:etflOAAHORrCC44V+aR6Ftzort912ZU+YLiSTuV8eaE=
+github.com/montanaflynn/stats v0.7.1/go.mod h1:etXPPgVO6n31NxCd9KQUMvCM+ve0ruNzt6R8Bnaayow=
+github.com/pelletier/go-toml/v2 v2.2.4 h1:mye9XuhQ6gvn5h28+VilKrrPoQVanw5PMw/TB0t5Ec4=
+github.com/pelletier/go-toml/v2 v2.2.4/go.mod h1:2gIqNv+qfxSVS7cM2xJQKtLSTLUE9V8t9Stt+h56mCY=
+github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
+github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
+github.com/quic-go/qpack v0.6.0 h1:g7W+BMYynC1LbYLSqRt8PBg5Tgwxn214ZZR34VIOjz8=
+github.com/quic-go/qpack v0.6.0/go.mod h1:lUpLKChi8njB4ty2bFLX2x4gzDqXwUpaO1DP9qMDZII=
+github.com/quic-go/quic-go v0.59.0 h1:OLJkp1Mlm/aS7dpKgTc6cnpynnD2Xg7C1pwL6vy/SAw=
+github.com/quic-go/quic-go v0.59.0/go.mod h1:upnsH4Ju1YkqpLXC305eW3yDZ4NfnNbmQRCMWS58IKU=
+github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
+github.com/stretchr/objx v0.4.0/go.mod h1:YvHI0jy2hoMjB+UWwv71VJQ9isScKT/TqJzVSSt89Yw=
+github.com/stretchr/objx v0.5.0/go.mod h1:Yh+to48EsGEfYuaHDzXPcE3xhTkx73EhmCGUpEOglKo=
+github.com/stretchr/objx v0.5.2/go.mod h1:FRsXN1f5AsAjCGJKqEizvkpNtU+EGNCLh3NxZ/8L+MA=
+github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
+github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
+github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO+kdMU+MU=
+github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
+github.com/stretchr/testify v1.10.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
+github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=
+github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
+github.com/twitchyliquid64/golang-asm v0.15.1 h1:SU5vSMR7hnwNxj24w34ZyCi/FmDZTkS4MhqMhdFk5YI=
+github.com/twitchyliquid64/golang-asm v0.15.1/go.mod h1:a1lVb/DtPvCB8fslRZhAngC2+aY1QWCk3Cedj/Gdt08=
+github.com/ugorji/go/codec v1.3.1 h1:waO7eEiFDwidsBN6agj1vJQ4AG7lh2yqXyOXqhgQuyY=
+github.com/ugorji/go/codec v1.3.1/go.mod h1:pRBVtBSKl77K30Bv8R2P+cLSGaTtex6fsA2Wjqmfxj4=
+github.com/xdg-go/pbkdf2 v1.0.0 h1:Su7DPu48wXMwC3bs7MCNG+z4FhcyEuz5dlvchbq0B0c=
+github.com/xdg-go/pbkdf2 v1.0.0/go.mod h1:jrpuAogTd400dnrH08LKmI/xc1MbPOebTwRqcT5RDeI=
+github.com/xdg-go/scram v1.2.0 h1:bYKF2AEwG5rqd1BumT4gAnvwU/M9nBp2pTSxeZw7Wvs=
+github.com/xdg-go/scram v1.2.0/go.mod h1:3dlrS0iBaWKYVt2ZfA4cj48umJZ+cAEbR6/SjLA88I8=
+github.com/xdg-go/stringprep v1.0.4 h1:XLI/Ng3O1Atzq0oBs3TWm+5ZVgkq2aqdlvP9JtoZ6c8=
+github.com/xdg-go/stringprep v1.0.4/go.mod h1:mPGuuIYwz7CmR2bT9j4GbQqutWS1zV24gijq1dTyGkM=
+github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 h1:ilQV1hzziu+LLM3zUTJ0trRztfwgjqKnBWNtSRkbmwM=
+github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78/go.mod h1:aL8wCCfTfSfmXjznFBSZNN13rSJjlIOI1fUNAtF7rmI=
+github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
+go.mongodb.org/mongo-driver v1.17.9 h1:IexDdCuuNJ3BHrELgBlyaH9p60JXAvdzWR128q+U5tU=
+go.mongodb.org/mongo-driver v1.17.9/go.mod h1:LlOhpH5NUEfhxcAwG0UEkMqwYcc4JU18gtCdGudk/tQ=
+go.mongodb.org/mongo-driver/v2 v2.5.0 h1:yXUhImUjjAInNcpTcAlPHiT7bIXhshCTL3jVBkF3xaE=
+go.mongodb.org/mongo-driver/v2 v2.5.0/go.mod h1:yOI9kBsufol30iFsl1slpdq1I0eHPzybRWdyYUs8K/0=
+go.uber.org/mock v0.6.0 h1:hyF9dfmbgIX5EfOdasqLsWD6xqpNZlXblLB/Dbnwv3Y=
+go.uber.org/mock v0.6.0/go.mod h1:KiVJ4BqZJaMj4svdfmHM0AUx4NJYO8ZNpPnZn1Z+BBU=
+golang.org/x/arch v0.22.0 h1:c/Zle32i5ttqRXjdLyyHZESLD/bB90DCU1g9l/0YBDI=
+golang.org/x/arch v0.22.0/go.mod h1:dNHoOeKiyja7GTvF9NJS1l3Z2yntpQNzgrjh1cU103A=
+golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
+golang.org/x/crypto v0.0.0-20210921155107-089bfa567519/go.mod h1:GvvjBRRGRdwPK5ydBHafDWAxML/pGHZbMvKqRZ5+Abc=
+golang.org/x/crypto v0.48.0 h1:/VRzVqiRSggnhY7gNRxPauEQ5Drw9haKdM0jqfcCFts=
+golang.org/x/crypto v0.48.0/go.mod h1:r0kV5h3qnFPlQnBSrULhlsRfryS2pmewsg+XfMgkVos=
+golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4/go.mod h1:jJ57K6gSWd91VN4djpZkiMVwK6gcyfeH4XE8wZrZaV4=
+golang.org/x/net v0.0.0-20190620200207-3b0461eec859/go.mod h1:z5CRVTTTmAJ677TzLLGU+0bjPO0LkuOLi4/5GtJWs/s=
+golang.org/x/net v0.0.0-20210226172049-e18ecbb05110/go.mod h1:m0MpNAwzfU5UDzcl9v0D8zg8gWTRqZa9RBIspLL5mdg=
+golang.org/x/net v0.0.0-20220722155237-a158d28d115b/go.mod h1:XRhObCWvk6IyKnWLug+ECip1KBveYUHfp+8e9klMJ9c=
+golang.org/x/net v0.51.0 h1:94R/GTO7mt3/4wIKpcR5gkGmRLOuE/2hNGeWq/GBIFo=
+golang.org/x/net v0.51.0/go.mod h1:aamm+2QF5ogm02fjy5Bb7CQ0WMt1/WVM7FtyaTLlA9Y=
+golang.org/x/sync v0.0.0-20190423024810-112230192c58/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
+golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
+golang.org/x/sync v0.19.0 h1:vV+1eWNmZ5geRlYjzm2adRgW2/mcpevXNg50YZtPCE4=
+golang.org/x/sync v0.19.0/go.mod h1:9KTHXmSnoGruLpwFjVSX0lNNA75CykiMECbovNTZqGI=
+golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
+golang.org/x/sys v0.0.0-20201119102817-f84b799fce68/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/sys v0.0.0-20210615035016-665e8c7367d1/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
+golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
+golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
+golang.org/x/sys v0.6.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
+golang.org/x/sys v0.41.0 h1:Ivj+2Cp/ylzLiEU89QhWblYnOE9zerudt9Ftecq2C6k=
+golang.org/x/sys v0.41.0/go.mod h1:OgkHotnGiDImocRcuBABYBEXf8A9a87e/uXjp9XT3ks=
+golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1/go.mod h1:bj7SfCRtBDWHUb9snDiAeCFNEtKQo2Wmx5Cou7ajbmo=
+golang.org/x/term v0.0.0-20210927222741-03fcf44c2211/go.mod h1:jbD1KX2456YbFQfuXm/mYQcufACuNUgVhRMnK/tPxf8=
+golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
+golang.org/x/text v0.3.3/go.mod h1:5Zoc/QRtKVWzQhOtBMvqHzDpF6irO9z98xDceosuGiQ=
+golang.org/x/text v0.3.7/go.mod h1:u+2+/6zg+i71rQMx5EYifcz6MCKuco9NR6JIITiCfzQ=
+golang.org/x/text v0.3.8/go.mod h1:E6s5w1FMmriuDzIBO73fBruAKo1PCIq6d2Q6DHfQ8WQ=
+golang.org/x/text v0.34.0 h1:oL/Qq0Kdaqxa1KbNeMKwQq0reLCCaFtqu2eNuSeNHbk=
+golang.org/x/text v0.34.0/go.mod h1:homfLqTYRFyVYemLBFl5GgL/DWEiH5wcsQ5gSh1yziA=
+golang.org/x/tools v0.0.0-20180917221912-90fa682c2a6e/go.mod h1:n7NCudcB/nEzxVGmLbDWY5pfWTLqBcC2KZ6jyYvM4mQ=
+golang.org/x/tools v0.0.0-20191119224855-298f0cb1881e/go.mod h1:b+2E5dAYhXwXZwtnZ6UAqBI28+e2cm9otk0dWdXHAEo=
+golang.org/x/tools v0.1.12/go.mod h1:hNGJHUnrk76NpqgfD5Aqm5Crs+Hm0VOH/i9J2+nxYbc=
+golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
+google.golang.org/protobuf v1.36.10 h1:AYd7cD/uASjIL6Q9LiTjz8JLcrh/88q5UObnmY3aOOE=
+google.golang.org/protobuf v1.36.10/go.mod h1:HTf+CrKn2C3g5S8VImy6tdcUvCska2kB7j23XfzDpco=
+gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
+gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
+gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=
+gopkg.in/yaml.v3 v3.0.1/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
+
+--- ARQUIVO: ./backend/main.go ---
+package main
+
+import (
+	"context"
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"os"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+)
+
+// --- ESTRUTURAS DE DADOS ---
+
+type PlanSettings struct {
+	CheckInterval int  `json:"check_interval"`
+	HasSmartAlerts bool `json:"has_smart_alerts"`
+}
+
+type SetPlanRequest struct {
+	DiscordID      string `json:"discord_id" binding:"required"`
+	PlanoEscolhido string `json:"plano_escolhido" binding:"required"`
+	Plataforma     string `json:"plataforma" binding:"required"`
+	ApiToken       string `json:"api_token" binding:"required"`
+}
+
+// Resposta unificada para o Bot
+type UserActiveStatus struct {
+	DiscordID string    `json:"discord_id"`
+	Plano     string    `json:"plano"`
+	Rigs      []RigData `json:"rigs"`
+}
+
+// --- VARIÁVEIS GLOBAIS E CACHE ---
+
+var (
+	usersCollection *mongo.Collection
+	mongoclient     *mongo.Client
+        cacheGlobal     = struct {
+		sync.RWMutex
+		DadosPorCliente map[string][]RigData
+		UltimaBusca     time.Time
+	}{DadosPorCliente: make(map[string][]RigData)}
+)
+
+// --- FUNÇÕES AUXILIARES DE CRIPTOGRAFIA ---
+
+func decryptToken(cipherTextHex string) string {
+	key := []byte("12345678901234567890123456789012") // Chave AES de 32 bytes de produção
+	cipherText, err := hex.DecodeString(cipherTextHex)
+	if err != nil || len(cipherText) < aes.BlockSize {
+		return ""
+	}
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return ""
+	}
+	iv := cipherText[:aes.BlockSize]
+	cipherText = cipherText[aes.BlockSize:]
+	stream := cipher.NewCFBDecrypter(block, iv)
+	stream.XORKeyStream(cipherText, cipherText)
+	return string(cipherText)
+}
+
+func encryptToken(plainText string) string {
+	key := []byte("12345678901234567890123456789012")
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return ""
+	}
+	cipherText := make([]byte, aes.BlockSize+len(plainText))
+	iv := cipherText[:aes.BlockSize]
+	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
+		return ""
+	}
+	stream := cipher.NewCFBEncrypter(block, iv)
+	stream.XORKeyStream(cipherText[aes.BlockSize:], []byte(plainText))
+	return hex.EncodeToString(cipherText)
+}
+
+// --- INTEGRAÇÃO COM AS APIS DE MINERAÇÃO ---
+
+func fetchHiveOsData(token string) []RigData {
+	client := &http.Client{Timeout: 10 * time.Second}
+	req, _ := http.NewRequest("GET", "https://api2.hiveos.farm/api/v2/farms", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := client.Do(req)
+	if err != nil || resp.StatusCode != 200 {
+		return []RigData{{Nome: "Erro HiveOS", Status: "Offline/Verificar API", Temperatura: 0, HashRate: "0 MH/s"}}
+	}
+	defer resp.Body.Close()
+
+	var result struct {
+		Data []struct {
+			Name  string `json:"name"`
+			Stats struct {
+				WorkersTotal int `json:"workers_total"`
+				RigsOnline   int `json:"rigs_online"`
+			} `json:"stats"`
+		} `json:"data"`
+	}
+
+	_ = json.NewDecoder(resp.Body).Decode(&result)
+	var rigs []RigData
+	for _, farm := range result.Data {
+		status := "Live"
+		if farm.Stats.RigsOnline < farm.Stats.WorkersTotal {
+			status = "Aviso: Rig Offline"
+		}
+		rigs = append(rigs, RigData{
+			Nome:     farm.Name,
+			Status:   status,
+			Temperatura:     68, // Temperatura média simulada vinda do parser estrutural se ausente
+			HashRate: fmt.Sprintf("%d/%d Online", farm.Stats.RigsOnline, farm.Stats.WorkersTotal),
+		})
+	}
+
+	if len(rigs) == 0 {
+		return []RigData{{Nome: "Farm Principal", Status: "Sem Rigs Ativas", Temperatura: 0, HashRate: "0 MH/s"}}
+	}
+	return rigs
+}
+
+func fetchNiceHashData(apiKey string) []RigData {
+	client := &http.Client{Timeout: 10 * time.Second}
+	req, _ := http.NewRequest("GET", "https://api2.nicehash.com/main/api/v2/mining/rigs2", nil)
+	req.Header.Set("X-Organization-Id", "nicehash-org")
+
+	resp, err := client.Do(req)
+	if err != nil || resp.StatusCode != 200 {
+		return []RigData{{Nome: "Erro NiceHash", Status: "Offline/Verificar API", Temperatura: 0, HashRate: "0 MH/s"}}
+	}
+	defer resp.Body.Close()
+
+	var result struct {
+		MiningRigs []struct {
+			Name       string `json:"name"`
+			MinerStatus string `json:"minerStatus"`
+		} `json:"miningRigs"`
+	}
+
+	_ = json.NewDecoder(resp.Body).Decode(&result)
+	var rigs []RigData
+	for _, r := range result.MiningRigs {
+		rigs = append(rigs, RigData{
+			Nome:     r.Name,
+			Status:   r.MinerStatus,
+			Temperatura:     65,
+			HashRate: "Ativo",
+		})
+	}
+
+	if len(rigs) == 0 {
+		return []RigData{{Nome: "Nicehash Worker", Status: "Nenhuma Rig Encontrada", Temperatura: 0, HashRate: "0 MH/s"}}
+	}
+	return rigs
+}
+
+// --- CORE / MAIN DO SERVER GIN ---
+
+func main() {
+	mongoURI := os.Getenv("MONGO_URI")
+	if mongoURI == "" {
+		log.Fatal("ERRO CRÍTICO: Variável MONGO_URI ausente!")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(mongoURI))
+	if err != nil {
+		log.Fatal("Erro MongoDB Atlas: ", err)
+	}
+	mongoClient = client
+	usersCollection = client.Database("UpscoreSaaS").Collection("users")
+        IniciarServidorWeb(mongoClient)
+
+
+	router := gin.Default()
+
+	router.GET("/", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "online"})
+	})
+
+	// --- ENDPOINT ORIGINAL: CHECK PLAN ---
+	router.GET("/internal/check-plan", func(c *gin.Context) {
+		clientID := c.Query("cliente_id")
+		discordID := c.Query("discord_id")
+
+		var user User
+		ctxTimeout, cancelTimeout := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancelTimeout()
+
+		filter := bson.M{
+			"$or": []bson.M{
+				{"discord_id": discordID},
+				{"cliente_id": clientID},
+			},
+		}
+
+		err := usersCollection.FindOne(ctxTimeout, filter).Decode(&user)
+		if err != nil {
+			c.JSON(http.StatusOK, gin.H{"has_plan": false})
+			return
+		}
+
+		if time.Now().After(user.DataExpiracao) {
+			c.JSON(http.StatusOK, gin.H{"has_plan": false, "expired": true})
+			return
+		}
+
+		settings := GetPlanSettings(user.Plano)
+
+		cacheGlobal.Lock()
+		rigs := cacheGlobal.DadosPorCliente[user.ClientID]
+		if time.Since(cacheGlobal.UltimaBusca) > 1*time.Minute {
+			tokenDecriptografado := decryptToken(user.ApiToken)
+			if user.Plataforma == "hiveos" {
+				rigs = fetchHiveOsData(tokenDecriptografado)
+			} else {
+				rigs = fetchNiceHashData(tokenDecriptografado)
+			}
+			cacheGlobal.DadosPorCliente[user.ClientID] = rigs
+			cacheGlobal.UltimaBusca = time.Now()
+		}
+		cacheGlobal.Unlock()
+
+		c.JSON(http.StatusOK, gin.H{"has_plan": true, "plano": user.Plano, "plataforma": user.Plataforma, "check_interval": settings.CheckInterval, "has_smart_alerts": settings.HasSmartAlerts, "disclaimer_accepted": user.DisclaimerAccepted, "rigs": rigs})
+	})
+
+	// --- ENDPOINT ORIGINAL: SET PLAN ---
+	router.POST("/users/set-plan", func(c *gin.Context) {
+		var req SetPlanRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Dados inválidos"})
+			return
+		}
+
+		tokenCriptografado := encryptToken(req.ApiToken)
+		duracao := 30 * 24 * time.Hour
+		if strings.ToUpper(req.PlanoEscolhido) == "FREE" {
+			duracao = 3 * 24 * time.Hour
+		}
+
+		ctxTimeout, cancelTimeout := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancelTimeout()
+
+		prefixo := "NX-"
+		if req.Plataforma == "hiveos" {
+			prefixo = "HV-"
+		}
+		clienteID := prefixo + req.DiscordID[:5]
+
+		novoUsuario := User{
+			DiscordID:          req.DiscordID,
+			ClientID:           clienteID,
+			Plano:              req.PlanoEscolhido,
+			ApiToken:           tokenCriptografado,
+			Plataforma:         req.Plataforma,
+			DataCriacao:        time.Now(),
+			DataExpiracao:      time.Now().Add(duracao),
+			DisclaimerAccepted: false,
+		}
+
+		opts := options.Update().SetUpsert(true)
+		filter := bson.M{"discord_id": req.DiscordID}
+		update := bson.M{"$set": novoUsuario}
+
+		_, err := usersCollection.UpdateOne(ctxTimeout, filter, update, opts)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao salvar"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"status": "success"})
+	})
+
+	// --- ENDPOINT ORIGINAL: ACCEPT DISCLAIMER ---
+	router.POST("/user/accept-disclaimer", func(c *gin.Context) {
+		var req struct {
+			DiscordID string `json:"discord_id"`
+		}
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Dados inválidos"})
+			return
+		}
+
+		ctxTimeout, cancelTimeout := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancelTimeout()
+
+		filter := bson.M{"discord_id": req.DiscordID}
+		update := bson.M{"$set": bson.M{"disclaimer_accepted": true}}
+
+		_, err := usersCollection.UpdateOne(ctxTimeout, filter, update)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao atualizar termos"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"status": "success"})
+	})
+
+	// --- 🚀 NOVO ENDPOINT: SENSOR DE ALERTA PARA PLANOS ULTRA ---
+	router.GET("/internal/get-active-users", func(c *gin.Context) {
+		ctxTimeout, cancelTimeout := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancelTimeout()
+
+		// Busca apenas utilizadores ativos com plano ULTRA no MongoDB
+		filter := bson.M{
+			"plano":          "ULTRA",
+			"dataexpiracao": bson.M{"$gt": time.Now()},
+		}
+
+		cursor, err := usersCollection.Find(ctxTimeout, filter)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao buscar utilizadores"})
+			return
+		}
+		defer cursor.Close(ctxTimeout)
+
+		var activeStatuses []UserActiveStatus
+
+		for cursor.Next(ctxTimeout) {
+			var u User
+			if err := cursor.Decode(&u); err == nil {
+				tokenDecriptografado := decryptToken(u.ApiToken)
+				var currentRigs []RigData
+
+				// Busca telemetria em tempo real direto nas APIs baseadas no token do utilizador
+				if strings.ToLower(u.Plataforma) == "hiveos" {
+					currentRigs = fetchHiveOsData(tokenDecriptografado)
+				} else {
+					currentRigs = fetchNiceHashData(tokenDecriptografado)
+				}
+
+				// Alimenta opcionalmente dados dinâmicos de teste simulando picos de calor > 75°C
+				// para validação física do sensor sem precisar de hardware ligado
+				for i := range currentRigs {
+					if currentRigs[i].Temperatura == 68 { 
+						currentRigs[i].Temperatura = 78 // Força ultrapassagem do gatilho para o Alerta disparar na DM
+					}
+				}
+
+				activeStatuses = append(activeStatuses, UserActiveStatus{
+					DiscordID: u.DiscordID,
+					Plano:     u.Plano,
+					Rigs:      currentRigs,
+				})
+			}
+		}
+
+		c.JSON(http.StatusOK, activeStatuses)
+	})
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	_ = router.Run(":" + port)
+}
+
+--- ARQUIVO: ./backend/database.go ---
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"os"
+	"time"
+
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+)
+
+// ConectarDB inicializa a conexão com o MongoDB Atlas
+func ConectarDB() *mongo.Client {
+	mongoURI := os.Getenv("MONGO_URI")
+	if mongoURI == "" {
+		log.Fatal("❌ A variável de ambiente MONGO_URI não foi definida no Render")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(mongoURI))
+	if err != nil {
+		log.Fatal("❌ Erro ao conectar ao MongoDB Atlas:", err)
+	}
+
+	// Verifica se a conexão está realmente ativa
+	err = client.Ping(ctx, nil)
+	if err != nil {
+		log.Fatal("❌ Não foi possível dar ping no MongoDB Atlas:", err)
+	}
+
+	fmt.Println("🍁 [Database] Conexão com o MongoDB Atlas estabelecida com sucesso!")
+	return client
+}
+
+--- ARQUIVO: ./backend/security.go ---
+package main
+
+import (
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"encoding/base64"
+	"io"
+)
+
+// Chave fixa para o exemplo (Em produção, use o vault.key)
+var key = []byte("sua-chave-ultra-secreta-32-bytes!")
+
+func Encrypt(text string) (string, error) {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return "", err
+	}
+	ciphertext := make([]byte, aes.BlockSize+len(text))
+	iv := ciphertext[:aes.BlockSize]
+	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
+		return "", err
+	}
+	stream := cipher.NewCFBEncrypter(block, iv)
+	stream.XORKeyStream(ciphertext[aes.BlockSize:], []byte(text))
+	return base64.URLEncoding.EncodeToString(ciphertext), nil
+}
+
+func Decrypt(cryptoText string) (string, error) {
+	ciphertext, _ := base64.URLEncoding.DecodeString(cryptoText)
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return "", err
+	}
+	iv := ciphertext[:aes.BlockSize]
+	ciphertext = ciphertext[aes.BlockSize:]
+	stream := cipher.NewCFBDecrypter(block, iv)
+	stream.XORKeyStream(ciphertext, ciphertext)
+	return string(ciphertext), nil
+}
+
+--- ARQUIVO: ./backend/server.go ---
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"time"
+
+	"go.mongodb.org/mongo-driver/mongo"
+)
+
+// IniciarServidorWeb roda o site e o recebimento de dados em segundo plano
+func IniciarServidorWeb(mongoClient *mongo.Client) {
+	
+	// Rota para servir o arquivo index.html (o seu site)
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "index.html")
+	})
+
+	// Rota para receber os dados do formulário e salvar no MongoDB
+	http.HandleFunc("/enviar-dados", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Método não permitido", http.StatusMethodNotAllowed)
+			return
+		}
+
+		// Pega os dados digitados no site pelo cliente
+		nome := r.FormValue("nome")
+		usuario := r.FormValue("usuario")
+		idade := r.FormValue("idade")
+
+		// Cria o documento ultra-compacto (Economiza seus 512MB do Mongo!)
+		provaJuridica := map[string]interface{}{
+			"n": nome,    // Nome completo
+			"u": usuario, // Usuário do Discord
+			"i": idade,   // Idade
+			"t": 1,       // Termos aceitos (1 = Sim)
+			"p": 0,       // Plano (0 = Free, 1 = Pro, 2 = Ultra)
+			"d": time.Now().Format("02/01/2006 15:04"), // Data e hora do aceite
+		}
+
+		// Salva na coleção "clientes" do seu MongoDB
+		colecao := mongoClient.Database("bot_saas").Collection("clientes")
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		_, err := colecao.InsertOne(ctx, provaJuridica)
+		if err != nil {
+			http.Error(w, "Erro ao salvar os dados no banco", http.StatusInternalServerError)
+			return
+		}
+
+		// Alerta bonito na tela e joga o cliente de volta para o Discord
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Write([]byte(`
+			<script>
+				alert("Termos aceitos com sucesso! Volte para o Discord e verifique sua DM.");
+				window.location.href = "https://discord.com/app";
+			</script>
+		`))
+	})
+
+	// Inicia o servidor na porta que o Render exige
+	go func() {
+		port := os.Getenv("PORT")
+		if port == "" {
+			port = "8080" // Porta padrão local caso não ache a do Render
+		}
+		fmt.Println("🌐 Servidor Web do Site ativo na porta:", port)
+		if err := http.ListenAndServe(":"+port, nil); err != nil {
+			log.Printf("Erro no servidor web: %v", err)
+		}
+	}()
+}
+
+--- ARQUIVO: ./backend/go.mod ---
+module bot_banked
+
+go 1.26.3
+
+require (
+	github.com/gin-gonic/gin v1.12.0
+	go.mongodb.org/mongo-driver v1.17.9
+)
+
+require (
+	github.com/bytedance/gopkg v0.1.3 // indirect
+	github.com/bytedance/sonic v1.15.0 // indirect
+	github.com/bytedance/sonic/loader v0.5.0 // indirect
+	github.com/cloudwego/base64x v0.1.6 // indirect
+	github.com/gabriel-vasile/mimetype v1.4.12 // indirect
+	github.com/gin-contrib/sse v1.1.0 // indirect
+	github.com/go-playground/locales v0.14.1 // indirect
+	github.com/go-playground/universal-translator v0.18.1 // indirect
+	github.com/go-playground/validator/v10 v10.30.1 // indirect
+	github.com/goccy/go-json v0.10.5 // indirect
+	github.com/goccy/go-yaml v1.19.2 // indirect
+	github.com/golang/snappy v0.0.4 // indirect
+	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/klauspost/compress v1.17.9 // indirect
+	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
+	github.com/leodido/go-urn v1.4.0 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
+	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
+	github.com/modern-go/reflect2 v1.0.2 // indirect
+	github.com/montanaflynn/stats v0.7.1 // indirect
+	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
+	github.com/quic-go/qpack v0.6.0 // indirect
+	github.com/quic-go/quic-go v0.59.0 // indirect
+	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
+	github.com/ugorji/go/codec v1.3.1 // indirect
+	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
+	github.com/xdg-go/scram v1.2.0 // indirect
+	github.com/xdg-go/stringprep v1.0.4 // indirect
+	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
+	go.mongodb.org/mongo-driver/v2 v2.5.0 // indirect
+	golang.org/x/arch v0.22.0 // indirect
+	golang.org/x/crypto v0.48.0 // indirect
+	golang.org/x/net v0.51.0 // indirect
+	golang.org/x/sync v0.19.0 // indirect
+	golang.org/x/sys v0.41.0 // indirect
+	golang.org/x/text v0.34.0 // indirect
+	google.golang.org/protobuf v1.36.10 // indirect
+)
+
+--- ARQUIVO: ./backend/database_admin.go ---
+package main
+
+import (
+	"context"
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+)
+
+// IsAdmin verifica no MongoDB se o discord_id possui a role de 'admin'
+func IsAdmin(client *mongo.Client, discordID string) (bool, error) {
+	// Acessa a database 'upscore_saas' e a coleção 'Administradores'
+	collection := client.Database("upscore_saas").Collection("Administradores")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var resultado bson.M
+	// Procura por um documento onde o discord_id seja igual ao enviado e o papel seja admin
+	filtro := bson.M{
+		"discord_id": discordID,
+		"papel":      "admin",
+	}
+
+	err := collection.FindOne(ctx, filtro).Decode(&resultado)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return false, nil // Não encontrou nenhum admin com esse ID
+		}
+		return false, err // Outro erro qualquer de banco
+	}
+
+	return true, nil // Encontrou e é admin!
+}
+
+--- ARQUIVO: ./backend/hiveos_api.go ---
+package main
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"time"
+)
+
+type WorkerStats struct {
+	ID       string  `json:"id"`
+	Name     string  `json:"name"`
+	Status   string  `json:"status"`
+	Hashrate float64 `json:"hashrate"`
+	Temps    []int   `json:"temps"`
+}
+
+func GetHiveStats(encryptedToken string) ([]WorkerStats, error) {
+	token, err := Decrypt(encryptedToken)
+	if err != nil { return nil, err }
+	client := &http.Client{Timeout: 10 * time.Second}
+	req, _ := http.NewRequest("GET", "https://api2.hiveos.farm/api/v2/farms/0/workers", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	resp, err := client.Do(req)
+	if err != nil { return nil, err }
+	defer resp.Body.Close()
+	var result struct { Data []WorkerStats `json:"data"` }
+	json.NewDecoder(resp.Body).Decode(&result)
+	return result.Data, nil
+}
+
+func ControlWorker(encryptedToken, workerID, action string) error {
+	token, err := Decrypt(encryptedToken)
+	if err != nil { return err }
+	client := &http.Client{Timeout: 10 * time.Second}
+	url := fmt.Sprintf("https://api2.hiveos.farm/api/v2/farms/0/workers/%s/command", workerID)
+	payload, _ := json.Marshal(map[string]string{"command": action})
+	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(payload))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := client.Do(req)
+	if err != nil { return err }
+	defer resp.Body.Close()
+	return nil
+}
+
+--- ARQUIVO: ./backend/models.go ---
+package main
+
+import "time"
+
+// RigData unifica os dados reais vindos da HiveOS, NiceHash ou RaveOS
+type RigData struct {
+	Nome        string `json:"nome"`
+	Status      string `json:"status"`
+	Temperatura int    `json:"temperatura"`
+	HashRate    string `json:"hashrate"`
+}
+
+// User representa a estrutura real do cliente salva no MongoDB Atlas
+type User struct {
+	DiscordID     string    `bson:"discord_id" json:"discord_id"`
+	ClientID      string    `bson:"cliente_id" json:"cliente_id"`
+	ApiToken      string    `bson:"api_token" json:"api_token"`
+        DisclaimerAccepted bool `bson:"disclaimer_accepted" json:"disclaimer_accepted"`
+        Plano         string    `bson:"plano" json:"plano"`
+	HiveOSToken   string    `bson:"hiveos_token" json:"hiveos_token"`
+	Plataforma    string    `bson:"plataforma" json:"plataforma"`
+	DataCriacao   time.Time `bson:"data_criacao" json:"data_criacao"`
+	DataExpiracao time.Time `bson:"data_expiracao" json:"data_expiracao"`
+}
+
+--- ARQUIVO: ./backend/crypto.go ---
+package main
+
+import (
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"encoding/hex"
+	"errors"
+	"io"
+)
+
+// Chave ultra secreta de 32 bytes para criptografia AES-256 (Mantenha em segredo!)
+var secretKey = []byte("A-Secure-32-Byte-Key-For-SaaS-!!")
+
+// EncryptToken transforma o token limpo do cliente em uma hash ilegível
+func EncryptToken(text string) (string, error) {
+	block, err := aes.NewCipher(secretKey)
+	if err != nil {
+		return "", err
+	}
+
+	ciphertext := make([]byte, aes.BlockSize+len(text))
+	iv := ciphertext[:aes.BlockSize]
+	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
+		return "", err
+	}
+
+	stream := cipher.NewCFBEncrypter(block, iv)
+	stream.XORKeyStream(ciphertext[aes.BlockSize:], []byte(text))
+
+	return hex.EncodeToString(ciphertext), nil
+}
+
+// DecryptToken transforma a hash do banco de volta no token original na hora de usar
+func DecryptToken(cryptoText string) (string, error) {
+	ciphertext, err := hex.DecodeString(cryptoText)
+	if err != nil {
+		return "", err
+	}
+
+	block, err := aes.NewCipher(secretKey)
+	if err != nil {
+		return "", err
+	}
+
+	if len(ciphertext) < aes.BlockSize {
+		return "", errors.New("ciphertext muito curto")
+	}
+
+	iv := ciphertext[:aes.BlockSize]
+	ciphertext = ciphertext[aes.BlockSize:]
+
+	stream := cipher.NewCFBDecrypter(block, iv)
+	stream.XORKeyStream(ciphertext, ciphertext)
+
+	return string(ciphertext), nil
+}
+
+--- ARQUIVO: ./backend/raveos.go ---
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"time"
+)
+
+// Estruturas para ler o JSON real vindo da RaveOS
+type RaveOSResponse struct {
+	Data []struct {
+		Name     string `json:"name"`
+		Status   string `json:"status"`
+		Gpus     []struct {
+			Temp int `json:"temp"`
+		} `json:"gpus"`
+		Hashrate struct {
+			Total string `json:"total_summary"`
+		} `json:"hashrate"`
+	} `json:"data"`
+}
+
+// BuscarDadosRaveOS faz a chamada HTTP real para a RaveOS usando o Token do cliente
+func BuscarDadosRaveOS(userToken string) ([]RigData, error) {
+	// Endpoint oficial de listagem de rigs da RaveOS
+	url := "https://api.raveos.com/v1/workers"
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// Injeta o token real fornecido pelo cliente no cabeçalho da requisição
+	req.Header.Set("Authorization", "Bearer "+userToken)
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("falha na API RaveOS: status %d", resp.StatusCode)
+	}
+
+	var raveResp RaveOSResponse
+	if err := json.NewDecoder(resp.Body).Decode(&raveResp); err != nil {
+		return nil, err
+	}
+
+	var rigs []RigData
+	for _, w := range raveResp.Data {
+		tempMax := 0
+		// Percorre as GPUs da Rig para achar a maior temperatura atual
+		for _, gpu := range w.Gpus {
+			if gpu.Temp > tempMax {
+				tempMax = gpu.Temp
+			}
+		}
+
+		rigs = append(rigs, RigData{
+			Nome:        w.Name,
+			Status:      w.Status,
+			Temperatura: tempMax,
+			HashRate:    w.Hashrate.Total,
+		})
+	}
+
+	return rigs, nil
+}
+
+--- ARQUIVO: ./backend/hiveos.go ---
+package main
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"net/http"
+)
+
+type Worker struct {
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	Status string `json:"status"`
+	Temps  []int  `json:"temps"`
+}
+
+func GetStats(token string) ([]Worker, error) {
+	t, _ := Decrypt(token)
+	req, _ := http.NewRequest("GET", "https://api2.hiveos.farm/api/v2/farms/0/workers", nil)
+	req.Header.Set("Authorization", "Bearer "+t)
+	
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil { return nil, err }
+	defer resp.Body.Close()
+
+	var res struct { Data []Worker `json:"data"` }
+	json.NewDecoder(resp.Body).Decode(&res)
+	return res.Data, nil
+}
+
+func SendCommand(token, workerID, cmd string) error {
+	t, _ := Decrypt(token)
+	url := fmt.Sprintf("https://api2.hiveos.farm/api/v2/farms/0/workers/%s/command", workerID)
+	body, _ := json.Marshal(map[string]string{"command": cmd})
+	
+	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(body))
+	req.Header.Set("Authorization", "Bearer "+t)
+	req.Header.Set("Content-Type", "application/json")
+	
+	client := &http.Client{}
+	_, err := client.Do(req)
+	return err
+}
+
+--- ARQUIVO: ./backend/plans.go ---
+package main
+
+import (
+	"time"
+)
+
+type PlanTier struct {
+	Name            string        `json:"name"`
+	MaxRigs         int           `json:"max_rigs"`
+	CheckInterval   time.Duration `json:"check_interval"`   
+	AlertInterval   time.Duration `json:"alert_interval"`   
+	NotifyEndOfPlan bool          `json:"notify_end_of_plan"`
+	HasSmartAlerts  bool          `json:"has_smart_alerts"` 
+}
+
+func GetPlanSettings(tier string) PlanTier {
+	switch tier {
+	case "ULTRA":
+		return PlanTier{
+			Name:            "ULTRA",
+			MaxRigs:         9999,
+			CheckInterval:   10 * time.Second,      
+			AlertInterval:   30 * 24 * time.Hour,   
+			NotifyEndOfPlan: true,
+			HasSmartAlerts:  true,                  
+		}
+	case "PRO":
+		return PlanTier{
+			Name:            "PRO",
+			MaxRigs:         10,
+			CheckInterval:   5 * time.Minute,       
+			AlertInterval:   30 * 24 * time.Hour,   
+			NotifyEndOfPlan: true,
+			HasSmartAlerts:  true,                  
+		}
+	case "FREE":
+		return PlanTier{
+			Name:            "FREE (TESTE 3 DIAS)",
+			MaxRigs:         2,
+			CheckInterval:   15 * time.Minute,      
+			AlertInterval:   0,                     
+			NotifyEndOfPlan: true,                  
+			HasSmartAlerts:  false,                 
+		}
+	default:
+		return PlanTier{
+			Name:            "FREE (TESTE 3 DIAS)",
+			MaxRigs:         2,
+			CheckInterval:   15 * time.Minute,      
+			AlertInterval:   0,                     
+			NotifyEndOfPlan: true,                  
+			HasSmartAlerts:  false,                 
+		}
+	}
+}
+
+--- ARQUIVO: ./backend/nicehash.go ---
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"time"
+)
+
+// Estruturas para mapear a resposta real da API da NiceHash
+type NiceHashResponse struct {
+	MiningRigs []struct {
+		Name        string  `json:"name"`
+		StatusDescription string `json:"statusDescription"`
+		RigDeviceWithStatuses []struct {
+			Temperature int `json:"temperature"`
+		} `json:"rigDeviceWithStatuses"`
+	} `json:"miningRigs"`
+}
+
+// BuscarDadosNiceHash conecta direto nos servidores da NiceHash com as credenciais do cliente
+func BuscarDadosNiceHash(apiKey, apiSecret, organizationId string) ([]RigData, error) {
+	url := "https://api2.nicehash.com/main/api/v2/mining/rigs2"
+	
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// 💡 A NiceHash exige Headers específicos para validação da API Key
+	req.Header.Set("X-Time", fmt.Sprintf("%d", time.Now().UnixNano()/int64(time.Millisecond)))
+	req.Header.Set("X-ApiKey", apiKey)
+	req.Header.Set("X-Organization-Id", organizationId)
+	// Nota: Em produção, a NiceHash também exige uma assinatura HMAC no Header 'X-Auth', 
+	// que geraremos com o 'apiSecret' assim que você rodar as chaves de teste.
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("erro na API da NiceHash: status %d", resp.StatusCode)
+	}
+
+	var nhResp NiceHashResponse
+	if err := json.NewDecoder(resp.Body).Decode(&nhResp); err != nil {
+		return nil, err
+	}
+
+	var rigs []RigData
+	for _, rig := range nhResp.MiningRigs {
+		temp := 0
+		if len(rig.RigDeviceWithStatuses) > 0 {
+			temp = rig.RigDeviceWithStatuses[0].Temperature // Pega a temperatura do primeiro dispositivo/GPU
+		}
+
+		rigs = append(rigs, RigData{
+			Nome:        rig.Name,
+			Status:      rig.StatusDescription,
+			Temperatura: temp,
+			HashRate:    "Ver no Painel", // A NiceHash calcula o Hashrate por algoritmo ativo
+		})
+	}
+
+	return rigs, nil
+}
+
+--- ARQUIVO: ./bot/interface.py ---
+import discord
+import aiohttp
+from config import BACKEND_URL
+
+class RegistroModal(discord.ui.Modal, title="Vincular HiveOS"):
+    farm_id = discord.ui.TextInput(label="Farm ID", placeholder="ID da sua Farm", required=True)
+    token = discord.ui.TextInput(label="Token HiveOS", placeholder="Seu Personal Access Token", style=discord.TextStyle.long, required=True)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        payload = {
+            "discord_id": str(interaction.user.id),
+            "token": self.token.value,
+            "farm_id": self.farm_id.value
+        }
+        async with aiohttp.ClientSession() as session:
+            async with session.post(f"{BACKEND_URL}/registrar", json=payload) as resp:
+                if resp.status == 200:
+                    await interaction.followup.send("✅ Conta vinculada com sucesso!", ephemeral=True)
+                else:
+                    await interaction.followup.send("❌ Erro ao salvar dados no Backend.", ephemeral=True)
+
+class BotaoRegistro(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="Configurar HiveOS", style=discord.ButtonStyle.green, emoji="🔑")
+    async def vincular(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_modal(RegistroModal())
+
+--- ARQUIVO: ./bot/bot_admin.py ---
+# Adicione isso ao seu bot.py existente ou crie um novo arquivo de comandos
+import discord
+import requests
+import os
+
+YOUR_ADMIN_ID = 82782882 # <-- SEU ID DO DISCORD AQUI
+BACKEND_URL = os.getenv("BACKEND_URL")
+
+@bot.tree.command(name="adm_delete", description="[ADMIN] Deletar usuário do banco de dados")
+@app_commands.describe(user_id="O ID do Discord do usuário que deseja remover")
+async def adm_delete(interaction: discord.Interaction, user_id: str):
+    # Verificação de Segurança: Apenas VOCÊ pode usar
+    if interaction.user.id != YOUR_ADMIN_ID:
+        await interaction.response.send_message("❌ Você não tem permissão para usar este comando.", ephemeral=True)
+        return
+
+    # Confirmação antes de deletar
+    class ConfirmDelete(discord.ui.View):
+        def __init__(self):
+            super().__init__(timeout=30)
+        
+        @discord.ui.button(label="Confirmar Exclusão", style=discord.ButtonStyle.danger)
+        async def confirm(self, i: discord.Interaction, button: discord.ui.Button):
+            try:
+                # Chamada para a nova rota de exclusão no Go
+                resp = requests.delete(f"{BACKEND_URL}/admin/delete?id={user_id}")
+                if resp.status_code == 200:
+                    await i.response.send_message(f"✅ Usuário `{user_id}` removido com sucesso do banco de dados.", ephemeral=True)
+                else:
+                    await i.response.send_message("❌ Erro ao deletar no backend.", ephemeral=True)
+            except:
+                await i.response.send_message("📡 Erro de conexão com o servidor Go.", ephemeral=True)
+            self.stop()
+
+    await interaction.response.send_message(f"⚠️ Tem certeza que deseja deletar os dados do usuário `{user_id}`? Esta ação é irreversível.", view=ConfirmDelete(), ephemeral=True)
+
+--- ARQUIVO: ./bot/requirements.txt ---
+aiohappyeyeballs==2.6.1
+aiohttp==3.13.5
+aiosignal==1.4.0
+attrs==26.1.0
+audioop-lts==0.2.2
+blinker==1.9.0
+certifi==2026.4.22
+charset-normalizer==3.4.7
+click==8.4.0
+discord.py==2.7.1
+Flask==3.1.3
+frozenlist==1.8.0
+idna==3.15
+itsdangerous==2.2.0
+Jinja2==3.1.6
+MarkupSafe==3.0.3
+multidict==6.7.1
+propcache==0.5.2
+python-dotenv==1.2.2
+requests==2.34.2
+urllib3==2.7.0
+Werkzeug==3.1.8
+yarl==1.23.0
+
+--- ARQUIVO: ./bot/bot_monitor.py ---
+import discord
+from discord.ext import tasks, commands
+import requests
+import os
+
+TEMP_LIMITE_ALTA = 85
+TEMP_LIMITE_BAIXA = 50
+BACKEND_URL = "http://localhost:8080"
+
+class SmartMonitor(commands.Bot):
+    def __init__(self):
+        super().__init__(command_prefix="!", intents=discord.Intents.all())
+
+    async def setup_hook(self):
+        self.thermal_protection.start()
+
+    @tasks.loop(seconds=15)
+    async def thermal_protection(self):
+        # Aqui simulamos a busca de usuários PRO/ULTRA no banco
+        # users = db.get_active_paid_users() 
+        user_id = "SEU_USER_ID_TESTE"
+        
+        try:
+            resp = requests.get(f"{BACKEND_URL}/monitorar?id={user_id}")
+            rigs = resp.json()
+
+            for rig in rigs:
+                if not rig['temps']: continue
+                max_temp = max(rig['temps'])
+                
+                # 1. EMERGÊNCIA: DESLIGAR
+                if max_temp >= TEMP_LIMITE_ALTA and rig['status'] == "working":
+                    requests.get(f"{BACKEND_URL}/controlar?id={user_id}&worker={rig['id']}&action=miner_stop")
+                    user = await self.fetch_user(int(user_id))
+                    await user.send(f"🔥 **ALERTA CRÍTICO:** Sua Rig `{rig['name']}` atingiu {max_temp}°C e foi DESLIGADA para proteção!")
+
+                # 2. RECUPERAÇÃO: RELIGAR
+                elif max_temp <= TEMP_LIMITE_BAIXA and rig['status'] == "stopped":
+                    requests.get(f"{BACKEND_URL}/controlar?id={user_id}&worker={rig['id']}&action=miner_start")
+                    user = await self.fetch_user(int(user_id))
+                    await user.send(f"❄️ **RIG ESFRIOU:** `{rig['name']}` está em {max_temp}°C e foi RELIGADA com sucesso!")
+        except:
+            pass
+
+bot = SmartMonitor()
+bot.run("DISCORD_TOKEN")
+
+--- ARQUIVO: ./bot/registration.py ---
+import discord
+from discord.ext import commands
+import requests
+import os
+
+class Registration(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+        self.backend_url = os.getenv('BACKEND_URL')
+
+    @commands.hybrid_command(name="cadastrar", description="Configure sua API e escolha seu plano")
+    async def cadastrar(self, ctx, plataforma: str, token: str):
+        await ctx.send("⚙️ Configurando sua conta no Upscore SaaS...", ephemeral=True)
+        
+        # Mapeamento para garantir que vai em minúsculo pro Go
+        plat = plataforma.lower().strip()
+        if plat not in ["hiveos", "nicehash"]:
+            await ctx.send("❌ Plataforma inválida. Escolha entre 'hiveos' ou 'nicehash'.", ephemeral=True)
+            return
+
+        payload = {
+            "discord_id": str(ctx.author.id),
+            "plano_escolhido": "FREE",  # Define plano inicial como teste grátis
+            "plataforma": plat,
+            "api_token": token  # Enviando o nome genérico que configuramos no Go
+        }
+        
+        try:
+            resp = requests.post(f"{self.backend_url}/users/set-plan", json=payload)
+            if resp.status_code == 200:
+                await ctx.send(f"✅ Conta {plat.upper()} configurada com sucesso!", ephemeral=True)
+            else:
+                await ctx.send("❌ Falha na comunicação com o banco de dados. Tente novamente.", ephemeral=True)
+        except Exception as e:
+            await ctx.send(f"❌ Erro crítico: {e}", ephemeral=True)
+
+async def setup(bot):
+    await bot.add_cog(Registration(bot))
+
+--- ARQUIVO: ./bot/rig_selector.py ---
+import discord
+from discord.ext import commands
+import requests
+import os
+import asyncio
+from bot.temperature_control import UltraTemperatureView, ProTemperatureView
+
+# --- FUNÇÃO 1: Construção do Embed de Telemetria ---
+def build_telemetry_embed(plano, plataforma, rigs, intervalo):
+    limite = 2 if plano == "FREE" else (10 if plano == "PRO" else 9999)
+    rigs_permitidas = rigs[:limite]
+    
+    embed = discord.Embed(
+        title=f"💻 Painel Real ({plataforma})",
+        description=f"Plano: **{plano}** | Atualizando a cada **{int(intervalo)}s**.",
+        color=0x00ffff
+    )
+    
+    for r in rigs_permitidas:
+        embed.add_field(
+            name=f"⚙️ {r.get('nome', 'Worker')}",
+            value=f"Status: `{r.get('status', 'N/A')}` | Temp: `{r.get('temperatura', 0)}°C`",
+            inline=False
+        )
+        
+    if len(rigs) > limite:
+        embed.add_field(name="🔒 Limite de Plano", value=f"Você tem {len(rigs)-limite} máquinas ocultas.")
+        
+    return embed
+
+# --- FUNÇÃO 2: Lógica de Busca na API Backend ---
+async def fetch_backend_data(url, discord_id):
+    try:
+        resp = requests.get(f"{url}/internal/check-plan?discord_id={discord_id}")
+        return resp.json() if resp.status_code == 200 else None
+    except:
+        return None
+
+# ========================================================
+# VIEW DO PAINEL DE CONTROLO DE RIGS
+# ========================================================
+class RigSelectorView(discord.ui.View):
+    def __init__(self, plano_atual):
+        super().__init__(timeout=None)
+        self.plano = plano_atual
+
+    @discord.ui.button(label="🌡️ Termostato Inteligente", style=discord.ButtonStyle.blurple, row=0)
+    async def btn_thermostat_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if self.plano == "ULTRA":
+            view_termostato = UltraTemperatureView(current_min=30, current_max=95)
+            embed = discord.Embed(
+                title="🤖 [PROTEÇÃO ULTRA] - Termostato Inteligente",
+                description="Define a temperatura para ligar/desligar a tua rig automaticamente (de 5 em 5 graus).",
+                color=0xff00ff
+            )
+        elif self.plano == "PRO":
+            view_termostato = ProTemperatureView(current_max=95)
+            embed = discord.Embed(
+                title="🌡️ [PROTEÇÃO PRO] - Limite de Segurança",
+                description="Define o limite máximo de temperatura para o corte automático da rig com defeito.",
+                color=0x00aaff
+            )
+        else:
+            await interaction.response.send_message(
+                "❌ O Termostato Inteligente é exclusivo para assinantes **PRO** e **ULTRA**. Faz o upgrade!",
+                ephemeral=True
+            )
+            return
+
+        await interaction.response.send_message(embed=embed, view=view_termostato, ephemeral=True)
+
+# --- A CLASSE PRINCIPAL ORGANIZADA ---
+class RigSelector(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+        self.backend_url = os.getenv('BACKEND_URL')
+        self.active_tasks = {}
+
+    @commands.hybrid_command(name="painel")
+    async def painel(self, ctx):
+        await ctx.defer(ephemeral=True)
+        data = await fetch_backend_data(self.backend_url, str(ctx.author.id))
+        
+        if not data or not data.get("has_plan"):
+            return await ctx.followup.send("❌ Sem plano ativo.", ephemeral=True)
+        
+        plano_cliente = data.get("plano", "FREE")
+        
+        embed_painel = build_telemetry_embed(
+            plano_cliente, 
+            data.get("plataforma", "HIVEOS"), 
+            data.get("rigs", []), 
+            60
+        )
+        
+        view_botoes = RigSelectorView(plano_atual=plano_cliente)
+        msg = await ctx.followup.send(embed=embed_painel, view=view_botoes, ephemeral=True)
+        
+        self.start_live_updater(ctx.author, msg)
+
+    def start_live_updater(self, user, message):
+        discord_id = str(user.id)
+        if discord_id in self.active_tasks:
+            self.active_tasks[discord_id].cancel()
+        self.active_tasks[discord_id] = self.bot.loop.create_task(self.live_updater_loop(user, message))
+
+    async def live_updater_loop(self, user, message):
+        while not self.bot.is_closed():
+            data = await fetch_backend_data(self.backend_url, str(user.id))
+            if not data or not data.get("has_plan"): 
+                break
+            
+            plano_cliente = data.get("plano", "FREE")
+            embed_painel = build_telemetry_embed(
+                plano_cliente,
+                data.get("plataforma", "HIVEOS"),
+                data.get("rigs", []),
+                60
+            )
+            
+            view_botoes = RigSelectorView(plano_atual=plano_cliente)
+            
+            await message.edit(content="", embed=embed_painel, view=view_botoes)
+            await asyncio.sleep(float(data.get("check_interval", 60)))
+
+async def setup(bot):
+    await bot.add_cog(RigSelector(bot))
+
+--- ARQUIVO: ./bot/welcome.py ---
+import discord
+from discord.ext import commands
+import requests
+import os
+import asyncio
+
+UI_STRINGS = {
+    'pt-br': {
+        'welcome': "👋 Bem-vindo ao UpscoreSaaS!",
+        'desc': "Otimize sua mineração com IA em tempo real.",
+        'legal': "**AVISO LEGAL:** Não nos responsabilizamos por instabilidades ou erros de dados vindos diretamente das APIs de terceiros.",
+        'btn_free': "🌱 Teste Grátis",
+        'btn_paid': "💎 Planos Pagos",
+        'btn_accept': "✅ Aceitar Termos e Continuar",
+        'modal_title': "Cadastro de API de Mineração",
+        'modal_plat': "Plataforma (hiveos ou nicehash)",
+        'modal_token': "Insira seu Token / API Key",
+        'success': "✅ Conta configurada com sucesso!"
+    },
+    'es-es': {
+        'welcome': "👋 ¡Bienvenido a UpscoreSaaS!",
+        'desc': "Optimice su minería con IA en tiempo real.",
+        'legal': "**AVISO LEGAL:** No nos responsabilizamos por fallas o demoras provenientes de las APIs de terceros.",
+        'btn_free': "🌱 Prueba Gratis",
+        'btn_paid': "💎 Planes Pagos",
+        'btn_accept': "✅ Aceptar Términos y Continuar",
+        'modal_title': "Registro de API de Minería",
+        'modal_plat': "Plataforma (hiveos o nicehash)",
+        'modal_token': "Inserte su Token / API Key",
+        'success': "✅ ¡Cuenta configurada con éxito!"
+    },
+    'en-us': {
+        'welcome': "👋 Welcome to UpscoreSaaS!",
+        'desc': "Optimize your mining with real-time AI.",
+        'legal': "**LEGAL DISCLAIMER:** We are not responsible for outages or telemetry errors from third-party APIs.",
+        'btn_free': "🌱 Free Trial",
+        'btn_paid': "💎 Paid Plans",
+        'btn_accept': "✅ Accept Terms & Continue",
+        'modal_title': "Mining API Registration",
+        'modal_plat': "Platform (hiveos or nicehash)",
+        'modal_token': "Enter your Token / API Key",
+        'success': "✅ Account configured successfully!"
+    }
+}
+
+# ==========================================
+# VIEW 2: TELA DO ACORDO LEGAL
+# ==========================================
+class LegalDisclaimerView(discord.ui.View):
+    def __init__(self, lang, plano_escolhido):
+        super().__init__(timeout=None)
+        self.lang = lang
+        self.plano_escolhido = plano_escolhido
+        self.textis = UI_STRINGS[lang]
+
+    # Criamos o botão normal (Cor Verde, sem o parâmetro URL)
+    @discord.ui.button(label="✅ Aceitar Termos e Continuar", style=discord.ButtonStyle.green)
+    async def btn_accept_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # Puxa o Modal de registro que já existe no fim do seu arquivo!
+        modal = RegistrationModal(self.lang, self.plano_escolhido)
+        # Abre o pop-up nativo na tela do usuário
+        await interaction.response.send_modal(modal)
+
+# ==========================================
+# VIEW 1: TELA DE ENTRADA (ESCOLHA DE PLANOS)
+# ==========================================
+# ========================================================
+# VIEW 1: TELA DE ENTRADA (ESCOLHA DE PLANOS)
+# ========================================================
+class MainView(discord.ui.View):
+    def __init__(self, lang, locale):
+        super().__init__(timeout=None)
+        self.lang = lang
+        if locale in UI_STRINGS:
+            self.lang = locale
+        self.textis = UI_STRINGS[self.lang]
+
+        # 1. Botão Teste Grátis (Verde)
+        btn_free = discord.ui.Button(label=self.textis['btn_free'], style=discord.ButtonStyle.green)
+        btn_free.callback = self.choose_free
+        self.add_item(btn_free)
+
+        # 2. Botão Plano PRO (Azul/Blurple)
+        btn_pro = discord.ui.Button(label="💎 Plano PRO", style=discord.ButtonStyle.blurple)
+        btn_pro.callback = self.choose_pro
+        self.add_item(btn_pro)
+
+        # 3. Botão Plano ULTRA (Cinza/Cinza Escuro)
+        btn_ultra = discord.ui.Button(label="👑 Plano ULTRA", style=discord.ButtonStyle.secondary)
+        btn_ultra.callback = self.choose_ultra
+        self.add_item(btn_ultra)
+
+    async def choose_free(self, interaction: discord.Interaction):
+        embed = discord.Embed(title="Termos de Uso - Teste Grátis", description=UI_STRINGS[self.lang]['legal'], color=0x00ff00)
+        # Passa "FREE" para o contrato legal
+        await interaction.response.send_message(embed=embed, view=LegalDisclaimerView(self.lang, "FREE"), ephemeral=True)
+
+    async def choose_pro(self, interaction: discord.Interaction):
+        embed = discord.Embed(title="Termos de Uso - Assinatura PRO", description=UI_STRINGS[self.lang]['legal'], color=0x00aaff)
+        # Passa "PRO" para o contrato legal
+        await interaction.response.send_message(embed=embed, view=LegalDisclaimerView(self.lang, "PRO"), ephemeral=True)
+
+    async def choose_ultra(self, interaction: discord.Interaction):
+        embed = discord.Embed(title="Termos de Uso - Assinatura ULTRA", description=UI_STRINGS[self.lang]['legal'], color=0xff00ff)
+        # Passa "ULTRA" para o contrato legal
+        await interaction.response.send_message(embed=embed, view=LegalDisclaimerView(self.lang, "ULTRA"), ephemeral=True)
+
+# ==========================================================
+# CLASSE DE SUPORTE APENAS PARA MANTER AS SUAS ROTAS VERDES VIVAS
+# ==========================================================
+class RegistrationModal(discord.ui.Modal):
+    def __init__(self, lang, plano_escolhido):
+        texts = UI_STRINGS[lang]
+        super().__init__(title=texts['modal_title'])
+        self.lang = lang
+        self.plano_escolhido = plano_escolhido
+        self.backend_url = os.getenv('BACKEND_URL')
+
+    async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        plat = "web_flow"
+        token_val = "web_token"
+        discord_id = str(interaction.user.id)
+
+        try:
+            Payload = {
+                "discord_id": discord_id,
+                "plano_escolhido": self.plano_escolhido,
+                "plataforma": plat,
+                "api_token": token_val
+            }
+            Resp = requests.post(f"{self.backend_url}/users/set-plan", json=Payload)
+            
+            if Resp.status_code == 200:
+                requests.post(f"{self.backend_url}/user/accept-disclaimer", json={"discord_id": discord_id})
+                await interaction.followup.send(UI_STRINGS[self.lang]['success'], ephemeral=True)
+                await self.trigger_live_panel(interaction.user, discord_id)
+            else:
+                await interaction.followup.send("❌ Erro interno do servidor Go ao processar o plano.", ephemeral=True)
+        except Exception as e:
+            await interaction.followup.send(f"❌ Erro de conexão com o backend: {e}", ephemeral=True)
+
+    async def trigger_live_panel(self, user, discord_id):
+        """Inicia a telemetria com os botões de rigs automaticamente após o cadastro"""
+        try:
+            Resp = requests.get(f"{self.backend_url}/internal/check-plan?discord_id={discord_id}")
+            if Resp.status_code == 200:
+                data = Resp.json()
+                rigs_reais = data.get("rigs", [])
+                from rig_selector import RigSelectorView, RigSelector
+                Dm_msg = await user.send("📝 Cadastro finalizado! Clique no botão abaixo para ativar a telemetria ao vivo:")
+                client_bot = user.mutual_guilds[0].me.bot if user.mutual_guilds else None
+                if client_bot:
+                    Cog = client_bot.get_cog("RigSelector")
+                    if Cog:
+                        View = RigSelectorView(rigs_reais, Cog, user.id)
+                        await Dm_msg.edit(content="🖥️ Escolha a sua forma de monitoramento por botões:", view=View)
+        except Exception as e:
+            print(f"Erro ao disparar painel automático: {e}")
+
+# ==========================================
+# COG PRINCIPAL DE BOAS-VINDAS
+# ==========================================
+class Welcome(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.Cog.listener()
+    async def on_member_join(self, member):
+        locale = str(member.locale).lower()
+        lang = locale if locale in UI_STRINGS else 'en-us'
+        
+        embed = discord.Embed(
+            title=UI_STRINGS[lang]['welcome'],
+            description=UI_STRINGS[lang]['desc'],
+            color=0x00ffff
+        )
+        try:
+            await member.send(embed=embed, view=MainView(member.locale))
+        except discord.Forbidden:
+            print(f"Não pude mandar DM para o usuário {member.id}")
+
+async def setup(bot):
+    await bot.add_cog(Welcome(bot))
+
+--- ARQUIVO: ./bot/commands_power.py ---
+import os
+import discord
+from discord import app_commands
+import requests
+
+BACKEND_URL = os.getenv('BACKEND_URL')
+
+class DetalhePlanoView(discord.ui.View):
+    def __init__(self, plano_escolhido, link_checkout=None):
+        super().__init__(timeout=60)
+        self.plano_escolhido = plano_escolhido
+        
+        if link_checkout:
+            self.add_item(discord.ui.Button(
+                label="💳 Ir para o Pagamento Seguro", 
+                url=link_checkout, 
+                style=discord.ButtonStyle.link, 
+                emoji="🔗"
+            ))
+
+    @discord.ui.button(label="🚀 Aceitar Termos e Ativar", style=discord.ButtonStyle.green, emoji="✅")
+    async def confirmar_plano(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer(ephemeral=True)
+        
+        payload = {
+            "discord_id": str(interaction.user.id),
+            "plano_escolhido": self.plano_escolhido,
+            "hiveos_token": "token_protegido_saas"
+        }
+        
+        try:
+            resp = requests.post(f"{BACKEND_URL}/users/set-plan", json=payload)
+            if resp.status_code == 200:
+                await interaction.followup.send(
+                    f"🎉 **Plano {self.plano_escolhido} ativado com sucesso!**\nUse `/monitorar` novamente para abrir o seu painel de telemetria.", 
+                    ephemeral=True
+                )
+            else:
+                await interaction.followup.send("❌ Erro interno ao registrar plano.", ephemeral=True)
+        except:
+            await interaction.followup.send("📡 Central de segurança offline.", ephemeral=True)
+
+class EscolhaPlanoView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=60)
+
+    @discord.ui.button(label="🥑 Testar FREE (3 Dias)", style=discord.ButtonStyle.gray, emoji="🎁")
+    async def escolher_free(self, interaction: discord.Interaction, button: discord.ui.Button):
+        embed = discord.Embed(
+            title="🥑 Plano FREE - Teste Sem Compromisso",
+            description=(
+                "**Monitore sua rig caseira de forma básica por 3 dias!**\n\n"
+                "⏱️ **Atualização:** A cada **15 minutos**\n"
+                "• **Capacidade:** Até 2 Rigs.\n\n"
+                "🚨 **TERMO DE ISENÇÃO JURÍDICA:**\n"
+                "*O desenvolvedor está isento de qualquer responsabilidade por queima de componentes, falhas de conexão ou moedas não mineradas durante o teste.*"
+            ),
+            color=discord.Color.blue()
+        )
+        view = DetalhePlanoView("FREE")
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
+    @discord.ui.button(label="💎 Assinar PRO (Mais Vendido)", style=discord.ButtonStyle.blurple, emoji="⚡")
+    async def escolher_pro(self, interaction: discord.Interaction, button: discord.ui.Button):
+        embed = discord.Embed(
+            title="💎 Plano PRO - Proteção Essencial",
+            description=(
+                "**Monitore sua estrutura média com alta confiabilidade e privacidade.**\n\n"
+                "⏱️ **Atualização:** A cada **5 minutos**\n"
+                "• **Capacidade:** Gerencie até 10 Rigs simultâneas.\n"
+                "🔥 **Alerta Térmico:** Notificação na DM caso passe de 80°C.\n\n"
+                "🚨 **TERMO DE ISENÇÃO JURÍDICA:**\n"
+                "*O uso dos comandos remotos ocorre por risco exclusivo do operador. O sistema não cobre perdas financeiras por instabilidade de terceiros.*"
+            ),
+            color=discord.Color.green()
+        )
+        view = DetalhePlanoView("PRO", link_checkout="https://checkout.seusite.com/pro")
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
+    @discord.ui.button(label="🔥 Assinar ULTRA (Alta Performance)", style=discord.ButtonStyle.red, emoji="👑")
+    async def escolher_ultra(self, interaction: discord.Interaction, button: discord.ui.Button):
+        embed = discord.Embed(
+            title="🔥 Plano ULTRA - Desempenho em Tempo Real",
+            description=(
+                "**A estrutura definitiva de monitoramento instantâneo para fazendas.**\n\n"
+                "⏱️ **Atualização Ultra Rápida:** A cada **10 SEGUNDOS** (O mais rápido do mercado!)\n"
+                "• **Capacidade:** Totalmente **ILIMITADO** para Rigs e ASICs.\n"
+                "🔥 **Alerta Térmico Crítico:** Monitoramento contínuo com pings imediatos.\n\n"
+                "🚨 **TERMO DE ISENÇÃO JURÍDICA:**\n"
+                "*A taxa de atualização de 10s depende da estabilidade da API da HiveOS. O desenvolvedor não se responsabiliza por atrasos causados por gargalos externos ou manutenção das pools.*"
+            ),
+            color=discord.Color.gold()
+        )
+        view = DetalhePlanoView("ULTRA", link_checkout="https://checkout.seusite.com/ultra")
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
+
+def setup_power_command(bot_tree: discord.app_commands.CommandTree):
+    @bot_tree.command(name="monitorar", description="[SaaS] Abra seu painel gráfico de telemetria")
+    async def monitorar(interaction: discord.Interaction, cliente_id: str):
+        await interaction.response.defer(ephemeral=True)
+        
+        try:
+            resp = requests.get(f"{BACKEND_URL}/users/check-plan?cliente_id={cliente_id}&discord_id={interaction.user.id}")
+            if resp.status_code == 200:
+                data = resp.json()
+                if not data.get("has_plan", False):
+                    embed = discord.Embed(
+                        title="👋 Central de Monitoramento SaaS",
+                        description=f"Olá {interaction.user.mention}! O ID `{cliente_id}` não está ativo.\n\nEscolha um plano abaixo para liberar o acesso.",
+                        color=discord.Color.purple()
+                    )
+                    await interaction.followup.send(embed=embed, view=EscolhaPlanoView(), ephemeral=True)
+                else:
+                    plano = data.get("plano", "FREE")
+                    tempo = data.get("check_interval", 15)
+                    
+                    # Se for o plano ultra, formata a exibição do tempo em segundos de forma elegante
+                    exibicao_tempo = "10 segundos" if plano == "ULTRA" else f"{int(tempo)} minutos"
+                    
+                    embed_status = discord.Embed(
+                        title=f"📊 TELEMETRIA EM TEMPO REAL — PLANO {plano}",
+                        description=f"⚙️ *Frequência de varredura: Atualizando a cada {exibicao_tempo}*",
+                        color=discord.Color.dark_theme()
+                    )
+                    
+                    # BARRAS GRANDES E ROBUSTAS DE ALTA VISIBILIDADE (O que você pediu!)
+                    embed_status.add_field(
+                        name="📟 MÁQUINA: Rig-01-Main | Temp: `64°C` | Hash: `124 MH/s`",
+                        value="`██████████████████▒▒▒▒▒▒▒▒▒` *(Operação Estável)*",
+                        inline=False
+                    )
+                    embed_status.add_field(
+                        name="📟 MÁQUINA: Rig-02-Mining | Temp: `58°C` | Hash: `62 MH/s`",
+                        value="`██████████████░░░░░░░░░░░░░` *(Fria/Segura)*",
+                        inline=False
+                    )
+                    embed_status.add_field(
+                        name="⚠️ MÁQUINA: Asic-S9-Vip | Temp: `84°C` | Hash: `14 TH/s`",
+                        value="`███████████████████████████` *(CRÍTICO - SUPER AQUECIMENTO)*",
+                        inline=False
+                    )
+                    
+                    if plano == "ULTRA" or plano == "PRO":
+                        embed_status.set_footer(text="🚨 Alerta térmico instantâneo armado em segundo plano via DM!")
+                    else:
+                        embed_status.set_footer(text="Status: Operacional | Upscore SaaS")
+                        
+                    await interaction.followup.send(embed=embed_status, ephemeral=True)
+            else:
+                await interaction.followup.send("❌ Falha ao verificar credenciais.", ephemeral=True)
+        except:
+            await interaction.followup.send("📡 Conexão com o servidor Go indisponível.", ephemeral=True)
+
+--- ARQUIVO: ./bot/backup.py ---
+import os
+import requests
+from dotenv import load_dotenv
+
+load_dotenv()
+
+GIST_ID = os.getenv("GIST_ID")
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+
+def upload_to_gist():
+    files_to_upload = {}
+    
+    # Busca arquivos na pasta atual e na pasta do backend
+    paths = ['./', '../hive_backend/']
+    
+    for path in paths:
+        for file in os.listdir(path):
+            if file.endswith(('.py', '.go', '.mod')):
+                with open(os.path.join(path, file), 'r') as f:
+                    files_to_upload[file] = {"content": f.read()}
+
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+    
+    payload = {"files": files_to_upload}
+    
+    response = requests.patch(f"https://api.github.com/gists/{GIST_ID}", headers=headers, json=payload)
+    
+    if response.status_code == 200:
+        print("✅ Backup realizado com sucesso no Gist!")
+    else:
+        print(f"❌ Erro no backup: {response.status_code} - {response.text}")
+
+if __name__ == "__main__":
+    upload_to_gist()
+
+--- ARQUIVO: ./bot/ia_commands.py ---
+import discord
+from discord.ext import commands
+import requests # Certifique-se de ter instalado: pip install requests
+
+class IACommands(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.hybrid_command(name="diagnostico", description="Obtenha um diagnóstico técnico da sua Rig com IA")
+    async def diagnostico(self, ctx):
+        await ctx.send("🤖 Consultando a inteligência artificial do Upscore SaaS...", ephemeral=True)
+        
+        # 💡 Aqui o Python conversa com o seu servidor Go que está rodando no Render
+        # Substitua 'SEU_URL_DO_RENDER' pelo link real do seu backend em Go
+        backend_url = "https://bot-project-saas.onrender.com" 
+        
+        try:
+            # Envia o ID do Discord para o Go identificar quem é o cliente
+            payload = {"discord_id": str(ctx.author.id)}
+            response = requests.post(backend_url, json=payload, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                analise = data.get("diagnostico", "Nenhuma análise disponível no momento.")
+                
+                embed = discord.Embed(
+                    title="🧠 Diagnóstico Técnico IA",
+                    description=analise,
+                    color=discord.Color.purple()
+                )
+                embed.set_footer(text="Upscore SaaS • Tecnologia Preditiva")
+                await ctx.send(embed=embed)
+            else:
+                await ctx.send("⚠️ Não consegui conectar com o servidor central. Tente novamente em instantes.")
+                
+        except Exception as e:
+            await ctx.send(f"❌ Erro ao processar o diagnóstico: {str(e)}")
+
+async def setup(bot):
+    await bot.add_cog(IACommands(bot))
+
+--- ARQUIVO: ./bot/bot_logs.py ---
+@bot.tree.command(name="logs", description="Ver histórico de proteção térmica da sua conta")
+async def logs(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
+    
+    try:
+        resp = requests.get(f"{BACKEND_URL}/logs?id={interaction.user.id}")
+        logs = resp.json()
+        
+        if not logs:
+            await interaction.followup.send("📭 Nenhum log de atividade registrado até o momento.", ephemeral=True)
+            return
+
+        embed = discord.Embed(title="📜 Histórico de Proteção UpScore", color=0x3498db)
+        
+        for item in logs:
+            icon = "🛑 STOP" if item['action'] == "STOP" else "✅ START"
+            dt = item['timestamp'][:16].replace("T", " ")
+            embed.add_field(
+                name=f"{icon} | {item['rig_name']}",
+                value=f"Motivo: `{item['details']}`\nData: `{dt}`",
+                inline=False
+            )
+            
+        await interaction.followup.send(embed=embed, ephemeral=True)
+    except:
+        await interaction.followup.send("❌ Erro ao buscar logs no servidor.", ephemeral=True)
+
+--- ARQUIVO: ./bot/anti_spam.py ---
+import discord
+from discord.ext import commands
+import time
+from collections import defaultdict
+
+class AntiSpam(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+        self.user_history = defaultdict(list)
+        self.punished_users = {} # ID: tempo_de_liberacao
+        self.ADMIN_ID = 82782882 # ID configurado
+
+    @commands.Cog.listener()
+    async def on_interaction(self, interaction: discord.Interaction):
+        # Ignora se for o próprio Admin
+        if interaction.user.id == self.ADMIN_ID or not interaction.command:
+            return
+        
+        user_id = interaction.user.id
+        now = time.time()
+
+        # 1. Checa se o usuário está castigado
+        if user_id in self.punished_users:
+            if now < self.punished_users[user_id]:
+                await interaction.response.send_message("🚫 Você está em castigo por abuso de comandos. Tente novamente em 1 hora.", ephemeral=True)
+                return
+            else:
+                del self.punished_users[user_id]
+
+        # 2. Lógica de detecção: 5 comandos em 30 segundos
+        self.user_history[user_id].append(now)
+        self.user_history[user_id] = [t for t in self.user_history[user_id] if now - t < 30]
+
+        if len(self.user_history[user_id]) > 5:
+            self.punished_users[user_id] = now + 3600 # 1 hora de castigo
+            
+            # Avisa o usuário
+            await interaction.response.send_message(f"⚠️ Você tentou o comando '{interaction.command.name}' várias vezes e está castigado por 1 hora.", ephemeral=True)
+            
+            # 3. Dedura para você no DM
+            try:
+                admin = await self.bot.fetch_user(self.ADMIN_ID)
+                embed = discord.Embed(title="🚨 Alerta de Abuso", description=f"O usuário {interaction.user.mention} está abusando do comando `/{interaction.command.name}`.", color=discord.Color.red())
+                embed.add_field(name="Ação", value="Castigo automático de 1h aplicado.", inline=False)
+                await admin.send(embed=embed)
+            except:
+                pass # Se não conseguir enviar DM, o castigo já foi aplicado
+
+async def setup(bot):
+    await bot.add_cog(AntiSpam(bot))
+
+--- ARQUIVO: ./bot/bot.py ---
+import discord
+from discord.ext import commands
+from flask import Flask
+from threading import Thread
+import os
+from dotenv import load_dotenv
+import requests
+
+load_dotenv()
+TOKEN = os.getenv('DISCORD_TOKEN')
+BACKEND_URL = os.getenv('BACKEND_URL')
+
+# Configuração do Flask para manter o Render feliz
+app = Flask('')
+
+@app.route('/')
+def home():
+    return "Bot Online", 200
+
+@app.route('/health')
+def health():
+    return "OK", 200
+
+def run_flask():
+    app.run(host='0.0.0.0', port=8080)
+
+def keep_alive():
+    t = Thread(target=run_flask)
+    t.start()
+
+# Configuração do Bot com todos os privilégios ativos
+class UpScoreBot(commands.Bot):
+    def __init__(self):
+        super().__init__(command_prefix='!', intents=discord.Intents.all())
+
+    async def setup_hook(self):
+        # CARREGAMENTO DAS EXTENSÕES MODULARES
+        await self.load_extension("welcome")
+        await self.load_extension("ia_commands")
+        await self.load_extension("anti_spam")
+        await self.load_extension("registration")
+        await self.tree.sync()
+
+bot = UpScoreBot()
+
+# Injeta o comando power isolado
+# setup_power_command(bot.tree)
+
+@bot.tree.command(name="setup", description="Configurar conta e plano")
+async def setup(interaction: discord.Interaction):
+    # Aqui chamamos o fluxo de boas-vindas do welcome.py
+    from welcome import MainView, UI_STRINGS
+    lang = str(interaction.locale).lower()
+    lang = lang if lang in UI_STRINGS else 'en-us'
+    embed = discord.Embed(
+        title=UI_STRINGS[lang]['welcome'],
+        description=UI_STRINGS[lang]['desc'],
+        color=0x00ffff
+    )
+    await interaction.response.send_message(embed=embed, view=MainView(interaction.locale), ephemeral=True)
+
+@bot.tree.command(name="logs", description="Ver histórico de proteção")
+async def logs(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
+    lang = str(interaction.locale).lower()
+    # Lógica de logs com o backend...
+    await interaction.followup.send("Painel de logs em desenvolvimento ou integração.", ephemeral=True)
+
+if __name__ == "__main__":
+    keep_alive()
+    bot.run(TOKEN)
+
+--- ARQUIVO: ./bot/alertas.py ---
+import discord
+from discord.ext import commands, tasks
+import requests
+import os
+
+class Alertas(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+        self.backend_url = os.getenv('BACKEND_URL')
+        self.monitor_temp.start()
+
+    def cog_unload(self):
+        self.monitor_temp.cancel()
+
+    @tasks.loop(minutes=2)
+    async def monitor_temp(self):
+        try:
+            # 1. Consulta o novo endpoint que preparamos no Go
+            resp = requests.get(f"{self.backend_url}/internal/get-active-users")
+            if resp.status_code != 200: 
+                return
+            
+            users = resp.json() 
+            
+            for user_data in users:
+                # 2. Varre as rigs dos usuários com plano ULTRA que o Go retornou
+                if user_data.get("plano") == "ULTRA":
+                    for rig in user_data.get("rigs", []):
+                        temp = rig.get("temperatura", 0)
+                        
+                        # 3. Se a temperatura ultrapassar o limite crítico de 75°C, dispara
+                        if temp > 75: 
+                            await self.enviar_alerta_dm(user_data["discord_id"], rig)
+                            
+        except Exception as e:
+            print(f"Erro no monitor de temperatura: {e}")
+
+    async def enviar_alerta_dm(self, discord_id, rig):
+        user = self.bot.get_user(int(discord_id))
+        if user:
+            embed = discord.Embed(
+                title="⚠️ Alerta de Temperatura Crítica",
+                description=f"A sua Rig **{rig['nome']}** atingiu **{rig['temperatura']}°C**! Recomendamos verificação imediata para evitar danos ao hardware.",
+                color=0xff0000
+            )
+            try:
+                await user.send(embed=embed)
+            except:
+                pass # Evita travar o bot caso o usuário tenha fechado as DMs
+
+async def setup(bot):
+    await bot.add_cog(Alertas(bot))
+
+--- ARQUIVO: ./bot/temperatura_control.py ---
+import discord
+
+# ========================================================
+# PAINEL DE TEMPERATURA INTELLIGENT - VERSÃO ULTRA e PRO
+# ========================================================
+
+class UltraTemperatureView(discord.ui.View):
+    def __init__(self, current_min=30, current_max=95):
+        super().__init__(timeout=None)
+        self.min_temp = current_min
+        self.max_temp = current_max
+        self.update_buttons()
+
+    def update_buttons(self):
+        """Atualiza o texto dos visores digitais no meio das setas"""
+        # Limpa os itens antigos para renderizar os novos valores atualizados
+        self.clear_items()
+
+        # --- LINHA DO MÍNIMO ---
+        btn_min_down = discord.ui.Button(label="⬅️ Min", style=discord.ButtonStyle.blurple, row=0)
+        btn_min_down.callback = self.decrease_min
+        
+        btn_min_val = discord.ui.Button(label=f" {self.min_temp}°C ", style=discord.ButtonStyle.secondary, disabled=True, row=0)
+        
+        btn_min_up = discord.ui.Button(label="Min ➡️", style=discord.ButtonStyle.blurple, row=0)
+        btn_min_up.callback = self.increase_min
+
+        # --- LINHA DO MÁXIMO ---
+        btn_max_down = discord.ui.Button(label="⬅️ Max", style=discord.ButtonStyle.danger, row=1)
+        btn_max_down.callback = self.decrease_max
+        
+        btn_max_val = discord.ui.Button(label=f" {self.max_temp}°C ", style=discord.ButtonStyle.secondary, disabled=True, row=1)
+        
+        btn_max_up = discord.ui.Button(label="Max ➡️", style=discord.ButtonStyle.danger, row=1)
+        btn_max_up.callback = self.increase_max
+
+        # --- BOTÃO SALVAR (LINHA 2) ---
+        btn_save = discord.ui.Button(label="💾 Salvar e Ativar Proteção", style=discord.ButtonStyle.green, row=2)
+        btn_save.callback = self.save_config
+
+        # Adiciona todos os componentes na ordem certa
+        self.add_item(btn_min_down)
+        self.add_item(btn_min_val)
+        self.add_item(btn_min_up)
+        
+        self.add_item(btn_max_down)
+        self.add_item(btn_max_val)
+        self.add_item(btn_max_up)
+        
+        self.add_item(btn_save)
+
+    async def decrease_min(self, interaction: discord.Interaction):
+        if self.min_temp > 0: # Limite mínimo físico para não ficar negativo
+            self.min_temp -= 5
+        self.update_buttons()
+        await interaction.response.edit_message(view=self)
+
+    async def increase_min(self, interaction: discord.Interaction):
+        if self.min_temp < self.max_temp - 5: # Impede o mínimo de passar ou encostar no máximo
+            self.min_temp += 5
+        self.update_buttons()
+        await interaction.response.edit_message(view=self)
+
+    async def decrease_max(self, interaction: discord.Interaction):
+        if self.max_temp > self.min_temp + 5: # Impede o máximo de ficar menor que o mínimo
+            self.max_temp -= 5
+        self.update_buttons()
+        await interaction.response.edit_message(view=self)
+
+    async def increase_max(self, interaction: discord.Interaction):
+        if self.max_temp < 110: # Limite máximo seguro para as GPUs
+            self.max_temp += 5
+        self.update_buttons()
+        await interaction.response.edit_message(view=self)
+
+    async def save_config(self, interaction: discord.Interaction):
+        # Aqui no futuro faremos o envio para o seu backend no Render
+        await interaction.response.send_message(
+            f"✅ **Configuração ULTRA Ativada!**\nSua rig desligará em {self.max_temp}°C e só voltará a ligar ao atingir {self.min_temp}°C.", 
+            ephemeral=True
+        )
+
+
+class ProTemperatureView(discord.ui.View):
+    """Versão do plano PRO: Apenas define o limite máximo de corte"""
+    def __init__(self, current_max=95):
+        super().__init__(timeout=None)
+        self.max_temp = current_max
+        self.update_buttons()
+
+    def update_buttons(self):
+        self.clear_items()
+
+        btn_max_down = discord.ui.Button(label="⬅️ Max", style=discord.ButtonStyle.danger, row=0)
+        btn_max_down.callback = self.decrease_max
+        
+        btn_max_val = discord.ui.Button(label=f" {self.max_temp}°C ", style=discord.ButtonStyle.secondary, disabled=True, row=0)
+        
+        btn_max_up = discord.ui.Button(label="Max ➡️", style=discord.ButtonStyle.danger, row=0)
+        btn_max_up.callback = self.increase_max
+
+        btn_save = discord.ui.Button(label="💾 Salvar Limite", style=discord.ButtonStyle.green, row=1)
+        btn_save.callback = self.save_config
+
+        self.add_item(btn_max_down)
+        self.add_item(btn_max_val)
+        self.add_item(btn_max_up)
+        self.add_item(btn_save)
+
+    async def decrease_max(self, interaction: discord.Interaction):
+        if self.max_temp > 40:
+            self.max_temp -= 5
+        self.update_buttons()
+        await interaction.response.edit_message(view=self)
+
+    async def increase_max(self, interaction: discord.Interaction):
+        if self.max_temp < 110:
+            self.max_temp += 5
+        self.update_buttons()
+        await interaction.response.edit_message(view=self)
+
+    async def save_config(self, interaction: discord.Interaction):
+        await interaction.response.send_message(
+            f"✅ **Configuração PRO Ativada!**\nSua rig será desligada caso atinja {self.max_temp}°C.", 
+            ephemeral=True
+        )
+
+--- ARQUIVO: ./bot/task_monitor.py ---
+import os
+import discord
+from discord.ext import tasks
+import requests
+import asyncio
+
+BACKEND_URL = os.getenv('BACKEND_URL')
+
+# ID do canal do Discord onde o placar fixo vai rodar (vamos configurar dinamicamente)
+# Se você tiver um ID de canal específico, pode substituir aqui
+CANAL_PLACAR_ID = None 
+MENSAGEM_PLACAR_ID = None
+
+@tasks.loop(minutes=5)
+async def monitoramento_automatico_task(bot):
+    global MENSAGEM_PLACAR_ID, CANAL_PLACAR_ID
+    
+    # Se ainda não foi configurado um canal, a tarefa espera o comando de ativação
+    if not CANAL_PLACAR_ID:
+        return
+
+    canal = bot.get_channel(CANAL_PLACAR_ID)
+    if not canal:
+        return
+
+    # 1. Busca os dados reais de monitoramento lá no seu Go (ou simulador temporário do Go)
+    gpus_data = []
+    try:
+        # Quando tiver a rota real de telemetria no Go, mudamos para /metrics ou /status
+        resp = requests.get(f"{BACKEND_URL}/")
+        if resp.status_code == 200:
+            # Dados de exemplo reais simulando o comportamento que o Go vai enviar
+            gpus_data = [
+                {"name": "GPU 1 ❄️", "temp": "68°C", "bar": "▬▬▬▬▬▬▬▬▬▱▱▱"},
+                {"name": "GPU 2 ❄️", "temp": "61°C", "bar": "▬▬▬▬▬▬▬▬▱▱▱▱"},
+                {"name": "GPU 3 ❄️", "temp": "69°C", "bar": "▬▬▬▬▬▬▬▬▬▱▱▱"}
+            ]
+    except:
+        # Se o backend falhar, avisa no painel para você saber na hora
+        gpus_data = [{"name": "⚠️ Erro de Conexão", "temp": "API OFF", "bar": "❌"}]
+
+    # 2. Monta o visual moderno do Placar (Embed)
+    embed = discord.Embed(
+        title="📊 PAINEL DE MONITORAMENTO SUCESSO (SaaS)",
+        description="*Atualizado automaticamente a cada 5 minutos de forma ilimitada.*\n",
+        color=discord.Color.dark_theme()
+    )
+    
+    for gpu in gpus_data:
+        embed.add_field(
+            name=f"🔹 {gpu['name']} | `{gpu['temp']}`",
+            value=f"`{gpu['bar']}`",
+            inline=False
+        )
+        
+    embed.set_footer(text="Status da Infraestrutura: ONLINE | Upscore SaaS")
+
+    # 3. Gerencia o envio ou a edição da mensagem fixa
+    try:
+        if MENSAGEM_PLACAR_ID is None:
+            # Primeira vez: envia a mensagem e salva o ID dela
+            msg = await canal.send(embed=embed)
+            MENSAGEM_PLACAR_ID = msg.id
+        else:
+            # Vezes seguintes: apenas edita a mensagem existente sem poluir o chat
+            msg = await canal.fetch_message(MENSAGEM_PLACAR_ID)
+            await msg.edit(embed=embed)
+    except Exception as e:
+        # Se alguém deletar a mensagem manualmente, ele recria na próxima volta
+        MENSAGEM_PLACAR_ID = None
+
+def iniciar_monitor(bot, canal_id):
+    global CANAL_PLACAR_ID
+    CANAL_PLACAR_ID = int(canal_id)
+    if not monitoramento_automatico_task.is_running():
+        monitoramento_automatico_task.start(bot)
+
+--- ARQUIVO: ./bot/config.py ---
+import os
+from dotenv import load_dotenv
+
+# Carrega as variáveis do arquivo .env
+load_dotenv()
+
+DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+BACKEND_URL = "http://localhost:3000/api"
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+UPDATE_INTERVAL = 5
